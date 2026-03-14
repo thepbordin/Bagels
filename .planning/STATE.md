@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 current_phase: Phase 1 - Foundation
-status: Not started
-last_updated: "2026-03-14T16:48:30.056Z"
+status: executing
+last_updated: "2026-03-14T16:57:12.000Z"
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 6
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # State: Bagels v1
@@ -36,9 +36,9 @@ Transform Bagels from a binary SQLite database into a Git-trackable, LLM-accessi
 ## Current Position
 
 **Phase:** 1 - Foundation
-**Plan:** 01 - Test Infrastructure & Entity Export Tests (TDD RED)
-**Status:** In Progress
-**Progress Bar:** [█░░░░░░░░░] 17% (1/6 plans complete)
+**Plan:** 01b - Record Export Tests & Slug Generator Tests (TDD RED)
+**Status:** Complete
+**Progress Bar:** [███░░░░░░░] 33% (2/6 plans complete)
 
 ### Phase 1 Status
 
@@ -53,7 +53,7 @@ Transform Bagels from a binary SQLite database into a Git-trackable, LLM-accessi
 4. User can initialize Git repository
 5. User can manually export/import data
 
-**Plans:** 1/5 complete (01-01: Test Infrastructure & Entity Export Tests)
+**Plans:** 2/6 complete (01-01, 01-01b: Test Infrastructure & Entity/Record Export Tests)
 
 ## Performance Metrics
 
@@ -75,6 +75,7 @@ Transform Bagels from a binary SQLite database into a Git-trackable, LLM-accessi
 | **SQLite as runtime engine** | Preserve TUI performance, YAML for Git tracking only | Architecture decision |
 | **CLI as LLM interface** | Text-only, structured output, no interactive prompts | Implemented in Phase 2 |
 | Phase 01-foundation P01 | 14min | 5 tasks | 6 files |
+| Phase 01-foundation P01b | 184 | 2 tasks | 3 files |
 
 ### Technical Context
 
@@ -102,6 +103,9 @@ TUI → SQLite → YAML → Git → Remote
 - **TDD approach:** Write failing tests first, implement export functions in next plan (01-02)
 - **Shared fixtures:** Use conftest.py for reusable test utilities across all entity types
 - **Slug-based IDs:** All YAML exports use slug keys instead of integer IDs for Git mergeability
+- **Slug format:** r_YYYY-MM-DD_### for date-based grouping and mergeability
+- **Monthly file grouping:** records/YYYY-MM.yaml for manageable file sizes
+- **Gap handling:** Fill next available number, don't fill gaps (prevents conflicts)
 
 ### Known Blockers
 
@@ -119,8 +123,8 @@ None identified
 
 ### Last Session
 **Date:** 2026-03-14
-**Activity:** Roadmap creation
-**Outcome:** 4-phase roadmap defined, all requirements mapped
+**Activity:** Plan 01-01b execution
+**Outcome:** Created 11 tests for record export and slug generation (TDD RED phase complete)
 
 ### Next Steps
 1. Implement export functions (Plan 01-02: GREEN phase of TDD)
@@ -130,7 +134,7 @@ None identified
 5. Implement Git repository initialization
 
 ### Context Handoff
-Roadmap created with 4 phases covering all 53 v1 requirements. Ready to begin Phase 1 planning.
+Plan 01-01b complete. Combined with Plan 01-01, 30 export tests ready for implementation (GREEN phase). Slug generation edge cases tested for merge-by-ID workflow.
 
 ---
 *State initialized: 2026-03-14*

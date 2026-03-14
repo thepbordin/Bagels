@@ -11,7 +11,7 @@
 - [ ] **DATA-02**: Export all categories to YAML format (`data/categories.yaml`)
 - [ ] **DATA-03**: Export all persons to YAML format (`data/persons.yaml`)
 - [ ] **DATA-04**: Export all templates to YAML format (`data/templates.yaml`)
-- [ ] **DATA-05**: Export records grouped by month to YAML format (`data/records/YYYY-MM.yaml`)
+- [x] **DATA-05**: Export records grouped by month to YAML format (`data/records/YYYY-MM.yaml`)
 - [ ] **DATA-06**: Import YAML files back into SQLite database
 - [ ] **DATA-07**: Auto-export YAML on every record save/update/delete
 - [ ] **DATA-08**: Auto-import YAML on application startup
@@ -51,8 +51,8 @@
 ### Data Format
 
 - [ ] **FMT-01**: YAML files use human-readable, diffable format
-- [ ] **FMT-02**: Record IDs use slug-based format (`r_YYYY-MM-DD_###`)
-- [ ] **FMT-03**: Records grouped by month in separate files
+- [x] **FMT-02**: Record IDs use slug-based format (`r_YYYY-MM-DD_###`)
+- [x] **FMT-03**: Records grouped by month in separate files
 - [ ] **FMT-04**: YAML includes metadata, comments supported
 - [ ] **FMT-05**: All entities export with complete field data
 
@@ -128,7 +128,7 @@
 | DATA-02 | Phase 1 | Pending |
 | DATA-03 | Phase 1 | Pending |
 | DATA-04 | Phase 1 | Pending |
-| DATA-05 | Phase 1 | Pending |
+| DATA-05 | Phase 1 | Complete |
 | DATA-06 | Phase 1 | Pending |
 | DATA-07 | Phase 3 | Pending |
 | DATA-08 | Phase 3 | Pending |
@@ -156,8 +156,8 @@
 | LLM-04 | Phase 2 | Pending |
 | LLM-05 | Phase 2 | Pending |
 | FMT-01 | Phase 1 | Pending |
-| FMT-02 | Phase 1 | Pending |
-| FMT-03 | Phase 1 | Pending |
+| FMT-02 | Phase 1 | Complete |
+| FMT-03 | Phase 1 | Complete |
 | FMT-04 | Phase 1 | Pending |
 | FMT-05 | Phase 1 | Pending |
 | CFG-01 | Phase 3 | Pending |
