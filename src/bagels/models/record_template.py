@@ -29,6 +29,7 @@ class RecordTemplate(Base):
     )
 
     id = Column(Integer, primary_key=True, index=True)
+    slug = Column(String, unique=True, nullable=True)
     label = Column(String, nullable=False)
     amount = Column(Float, CheckConstraint("amount > 0"), nullable=False)
     accountId = Column(Integer, ForeignKey("account.id"), nullable=False)
