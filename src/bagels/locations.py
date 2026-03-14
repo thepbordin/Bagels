@@ -66,3 +66,10 @@ def yaml_records_directory() -> Path:
     records_dir = data_directory() / "records"
     records_dir.mkdir(exist_ok=True, parents=True)
     return records_dir
+
+
+def backups_directory() -> Path:
+    """Return path to backups directory (creates if needed)."""
+    backups_dir = data_directory() / "backups"
+    backups_dir.mkdir(exist_ok=True, parents=True)
+    return backups_dir
