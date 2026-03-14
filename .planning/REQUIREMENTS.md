@@ -7,10 +7,10 @@
 
 ### Data Export & Import
 
-- [ ] **DATA-01**: Export all accounts to YAML format (`data/accounts.yaml`)
-- [ ] **DATA-02**: Export all categories to YAML format (`data/categories.yaml`)
-- [ ] **DATA-03**: Export all persons to YAML format (`data/persons.yaml`)
-- [ ] **DATA-04**: Export all templates to YAML format (`data/templates.yaml`)
+- [x] **DATA-01**: Export all accounts to YAML format (`data/accounts.yaml`)
+- [x] **DATA-02**: Export all categories to YAML format (`data/categories.yaml`)
+- [x] **DATA-03**: Export all persons to YAML format (`data/persons.yaml`)
+- [x] **DATA-04**: Export all templates to YAML format (`data/templates.yaml`)
 - [x] **DATA-05**: Export records grouped by month to YAML format (`data/records/YYYY-MM.yaml`)
 - [x] **DATA-06**: Import YAML files back into SQLite database
 - [ ] **DATA-07**: Auto-export YAML on every record save/update/delete
@@ -124,10 +124,10 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DATA-01 | Phase 1 | Pending |
-| DATA-02 | Phase 1 | Pending |
-| DATA-03 | Phase 1 | Pending |
-| DATA-04 | Phase 1 | Pending |
+| DATA-01 | Phase 1 | Complete |
+| DATA-02 | Phase 1 | Complete |
+| DATA-03 | Phase 1 | Complete |
+| DATA-04 | Phase 1 | Complete |
 | DATA-05 | Phase 1 | Complete |
 | DATA-06 | Phase 1 | Complete |
 | DATA-07 | Phase 3 | Pending |
