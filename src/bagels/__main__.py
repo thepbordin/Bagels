@@ -123,5 +123,13 @@ def locate(thing_to_locate: str) -> None:
         print(database_file())
 
 
+# Add export/import/init commands
+from bagels.cli import export_command, import_command, init_command
+
+cli.add_command(export_command, name="export")
+cli.add_command(import_command, name="import")
+cli.add_command(init_command, name="init")
+
+
 if __name__ == "__main__":
     cli()
