@@ -53,7 +53,7 @@
 - [x] **FMT-01**: YAML files use human-readable, diffable format
 - [x] **FMT-02**: Record IDs use slug-based format (`r_YYYY-MM-DD_###`)
 - [x] **FMT-03**: Records grouped by month in separate files
-- [ ] **FMT-04**: YAML includes metadata, comments supported
+- [x] **FMT-04**: YAML includes metadata, comments supported
 - [x] **FMT-05**: All entities export with complete field data
 
 ### Configuration
@@ -158,7 +158,7 @@
 | FMT-01 | Phase 1 | Complete |
 | FMT-02 | Phase 1 | Complete |
 | FMT-03 | Phase 1 | Complete |
-| FMT-04 | Phase 1 | Pending |
+| FMT-04 | Phase 1 | Complete |
 | FMT-05 | Phase 1 | Complete |
 | CFG-01 | Phase 3 | Pending |
 | CFG-02 | Phase 3 | Pending |
