@@ -21,6 +21,7 @@ from bagels.models.category import Category
 from bagels.models.person import Person
 from bagels.models.record import Record
 from bagels.models.record_template import RecordTemplate
+from bagels.models.split import Split
 
 
 # ---------- Database Fixtures ---------- #
