@@ -39,3 +39,30 @@ def config_file() -> Path:
 
 def database_file() -> Path:
     return data_directory() / "db.db"
+
+
+def yaml_accounts_path() -> Path:
+    """Return path to accounts YAML file."""
+    return data_directory() / "accounts.yaml"
+
+
+def yaml_categories_path() -> Path:
+    """Return path to categories YAML file."""
+    return data_directory() / "categories.yaml"
+
+
+def yaml_persons_path() -> Path:
+    """Return path to persons YAML file."""
+    return data_directory() / "persons.yaml"
+
+
+def yaml_templates_path() -> Path:
+    """Return path to templates YAML file."""
+    return data_directory() / "templates.yaml"
+
+
+def yaml_records_directory() -> Path:
+    """Return path to records directory (creates if needed)."""
+    records_dir = data_directory() / "records"
+    records_dir.mkdir(exist_ok=True, parents=True)
+    return records_dir
