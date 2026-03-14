@@ -15,6 +15,24 @@ from sqlalchemy.orm import sessionmaker
 from datetime import datetime, timedelta
 from tempfile import mkdtemp
 
+# Initialize config BEFORE importing models (they need CONFIG.defaults)
+from bagels.config import Config, config_file
+import bagels.config as config_module
+import yaml
+import warnings
+
+# Create config file if needed
+if not config_file().exists():
+    config_file().parent.mkdir(parents=True, exist_ok=True)
+    with open(config_file(), "w") as f:
+        yaml.dump(Config.get_default().model_dump(), f)
+
+# Load config
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    config_module.CONFIG = Config()
+
+# Now import models (they need CONFIG to be set)
 from bagels.models.database.db import Base
 from bagels.models.account import Account
 from bagels.models.category import Category
@@ -34,6 +52,16 @@ def in_memory_db():
     Returns:
         Session: SQLAlchemy session object
     """
+    # Initialize config for tests
+    from bagels.config import Config
+    import bagels.config as config_module
+
+    if config_module.CONFIG is None:
+        with open(config_module.config_file(), "w") as f:
+            import yaml
+            yaml.dump(Config.get_default().model_dump(), f)
+        config_module.load_config()
+
     # Create in-memory SQLite engine
     engine = create_engine("sqlite:///:memory:")
 
@@ -96,10 +124,12 @@ def sample_category(in_memory_db):
     Returns:
         Category: Category object with test data
     """
+    from bagels.models.category import Nature
+
     category = Category(
         name="Groceries",
-        parentId=None,
-        nature="expense",
+        parentCategoryId=None,
+        nature=Nature.NEED,
         color="#FF5733"
     )
     in_memory_db.add(category)
@@ -179,11 +209,13 @@ def sample_category_tree(in_memory_db):
     Returns:
         dict: Dictionary with parent and child categories
     """
+    from bagels.models.category import Nature
+
     # Parent category
     parent = Category(
         name="Food",
-        parentId=None,
-        nature="expense",
+        parentCategoryId=None,
+        nature=Nature.NEED,
         color="#FF5733"
     )
     in_memory_db.add(parent)
@@ -192,8 +224,8 @@ def sample_category_tree(in_memory_db):
     # Child category
     child = Category(
         name="Groceries",
-        parentId=parent.id,
-        nature="expense",
+        parentCategoryId=parent.id,
+        nature=Nature.NEED,
         color="#FF5733"
     )
     in_memory_db.add(child)
@@ -201,8 +233,8 @@ def sample_category_tree(in_memory_db):
     # Grandchild category
     grandchild = Category(
         name="Weekly Groceries",
-        parentId=child.id,
-        nature="expense",
+        parentCategoryId=child.id,
+        nature=Nature.NEED,
         color="#FF5733"
     )
     in_memory_db.add(grandchild)
