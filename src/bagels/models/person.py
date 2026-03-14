@@ -16,6 +16,7 @@ class Person(Base):
     deletedAt = Column(DateTime, nullable=True)
 
     id = Column(Integer, primary_key=True, index=True)
+    slug = Column(String, unique=True, nullable=True)
     name = Column(String)
 
     splits = relationship("Split", back_populates="person")

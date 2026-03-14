@@ -26,6 +26,7 @@ class Record(Base):
     )
 
     id = Column(Integer, primary_key=True, index=True)
+    slug = Column(String, unique=True, nullable=True)
     label = Column(String, nullable=False)
     amount = Column(Float, CheckConstraint("amount > 0"), nullable=False)
     date = Column(DateTime, nullable=False, default=datetime.now)

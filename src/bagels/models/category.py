@@ -24,6 +24,7 @@ class Category(Base):
     deletedAt = Column(DateTime, nullable=True)
 
     id = Column(Integer, primary_key=True, index=True)
+    slug = Column(String, unique=True, nullable=True)
     parentCategoryId = Column(Integer, ForeignKey("category.id"), nullable=True)
     name = Column(String, nullable=False)
     nature = Column(SQLEnum(Nature), nullable=False)
