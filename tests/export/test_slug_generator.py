@@ -19,7 +19,7 @@ class TestSlugGenerationFirstOfDay:
         When: generate_record_slug(date(2026, 3, 14), session)
         Then: Returns "r_2026-03-14_001"
         """
-        from bagels.export.records import generate_record_slug
+        from bagels.export.slug_generator import generate_record_slug
 
         test_date = date(2026, 3, 14)
         slug = generate_record_slug(test_date, in_memory_db)
@@ -44,7 +44,7 @@ class TestSlugGenerationSequential:
         # Create account and category
         account = Account(name="Test Account", beginningBalance=1000.0)
         in_memory_db.add(account)
-        category = Category(name="Test Category", nature=Nature.NEED)
+        category = Category(name="Test Category", nature=Nature.NEED, color="#FF0000")
         in_memory_db.add(category)
         in_memory_db.commit()
 
@@ -84,7 +84,7 @@ class TestSlugGenerationSequential:
         in_memory_db.commit()
 
         # Generate next slug
-        from bagels.export.records import generate_record_slug
+        from bagels.export.slug_generator import generate_record_slug
 
         slug = generate_record_slug(test_date, in_memory_db)
 
@@ -108,7 +108,7 @@ class TestSlugGenerationDifferentDay:
         # Create account and category
         account = Account(name="Test Account", beginningBalance=1000.0)
         in_memory_db.add(account)
-        category = Category(name="Test Category", nature=Nature.NEED)
+        category = Category(name="Test Category", nature=Nature.NEED, color="#FF0000")
         in_memory_db.add(category)
         in_memory_db.commit()
 
@@ -129,7 +129,7 @@ class TestSlugGenerationDifferentDay:
         in_memory_db.commit()
 
         # Generate slug for different day
-        from bagels.export.records import generate_record_slug
+        from bagels.export.slug_generator import generate_record_slug
 
         test_date_2 = date(2026, 3, 15)
         slug = generate_record_slug(test_date_2, in_memory_db)
@@ -154,7 +154,7 @@ class TestSlugGenerationGaps:
         # Create account and category
         account = Account(name="Test Account", beginningBalance=1000.0)
         in_memory_db.add(account)
-        category = Category(name="Test Category", nature=Nature.NEED)
+        category = Category(name="Test Category", nature=Nature.NEED, color="#FF0000")
         in_memory_db.add(category)
         in_memory_db.commit()
 
@@ -190,7 +190,7 @@ class TestSlugGenerationGaps:
         in_memory_db.commit()
 
         # Generate next slug
-        from bagels.export.records import generate_record_slug
+        from bagels.export.slug_generator import generate_record_slug
 
         slug = generate_record_slug(test_date, in_memory_db)
 
@@ -215,7 +215,7 @@ class TestSlugGenerationMissingSlugs:
         # Create account and category
         account = Account(name="Test Account", beginningBalance=1000.0)
         in_memory_db.add(account)
-        category = Category(name="Test Category", nature=Nature.NEED)
+        category = Category(name="Test Category", nature=Nature.NEED, color="#FF0000")
         in_memory_db.add(category)
         in_memory_db.commit()
 
@@ -238,7 +238,7 @@ class TestSlugGenerationMissingSlugs:
         in_memory_db.commit()
 
         # Generate slug
-        from bagels.export.records import generate_record_slug
+        from bagels.export.slug_generator import generate_record_slug
 
         slug = generate_record_slug(test_date, in_memory_db)
 
@@ -257,7 +257,7 @@ class TestSlugFormatValidation:
         """
         import re
 
-        from bagels.export.records import generate_record_slug
+        from bagels.export.slug_generator import generate_record_slug
 
         test_date = date(2026, 3, 14)
         slug = generate_record_slug(test_date, in_memory_db)
