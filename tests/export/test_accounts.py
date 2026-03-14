@@ -57,8 +57,8 @@ class TestAccountExport:
         assert "accounts" in data
         assert len(data["accounts"]) == 1
 
-        # Account should be keyed by slug (we'll need to add slug field)
-        account_slug = account.slug  # This field doesn't exist yet
+        # Account should be keyed by generated slug (acc_ID format)
+        account_slug = f"acc_{account.id}"
         assert account_slug in data["accounts"]
 
         exported_account = data["accounts"][account_slug]
@@ -120,10 +120,11 @@ class TestAccountExport:
         assert "accounts" in data
         assert len(data["accounts"]) == 3
 
-        # Verify all accounts present with slug keys
+        # Verify all accounts present with generated slug keys
         for account in [account1, account2, account3]:
-            assert account.slug in data["accounts"]
-            exported = data["accounts"][account.slug]
+            account_slug = f"acc_{account.id}"
+            assert account_slug in data["accounts"]
+            exported = data["accounts"][account_slug]
             assert exported["name"] == account.name
             assert "id" not in exported  # No integer IDs
             assert "accountId" not in exported
@@ -159,7 +160,8 @@ class TestAccountExport:
         with open(result_path, 'r') as f:
             data = yaml.safe_load(f)
 
-        exported = data["accounts"][account.slug]
+        account_slug = f"acc_{account.id}"
+        exported = data["accounts"][account_slug]
         assert exported["createdAt"] == "2026-03-14T10:30:00"
         assert exported["updatedAt"] == "2026-03-14T10:30:00"
 
@@ -192,7 +194,8 @@ class TestAccountExport:
         with open(result_path, 'r') as f:
             data = yaml.safe_load(f)
 
-        exported = data["accounts"][account.slug]
+        account_slug = f"acc_{account.id}"
+        exported = data["accounts"][account_slug]
         assert exported["description"] is None
         assert exported["repaymentDate"] is None
         # Verify not string representations
@@ -227,6 +230,7 @@ class TestAccountExport:
         with open(result_path, 'r') as f:
             data = yaml.safe_load(f)
 
-        exported = data["accounts"][account.slug]
+        account_slug = f"acc_{account.id}"
+        exported = data["accounts"][account_slug]
         assert isinstance(exported["beginningBalance"], float)
         assert exported["beginningBalance"] == 1234.56
