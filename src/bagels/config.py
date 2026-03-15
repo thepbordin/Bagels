@@ -104,11 +104,22 @@ class State(BaseModel):
     budgeting: BudgetingStates = BudgetingStates()
 
 
+class GitConfig(BaseModel):
+    enabled: bool = False
+    auto_commit: bool = True
+    auto_push: bool = False
+    auto_pull: bool = False
+    remote: str = "origin"
+    branch: str = "main"
+    commit_message_format: str | None = None
+
+
 class Config(BaseModel):
     hotkeys: Hotkeys = Hotkeys()
     symbols: Symbols = Symbols()
     defaults: Defaults = Defaults()
     state: State = State()
+    git: GitConfig = GitConfig()
 
     def __init__(self, **data):
         try:
