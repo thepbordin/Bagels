@@ -103,7 +103,7 @@ def calculate_spending_by_day(session, month: str | None = None) -> list[dict]:
     for result in results:
         spending_by_day.append(
             {
-                "date": result.day.isoformat() if result.day else None,
+                "date": str(result.day) if result.day else None,
                 "amount": round(result.total_amount, 2),
             }
         )
