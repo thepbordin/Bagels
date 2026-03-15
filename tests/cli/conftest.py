@@ -46,32 +46,42 @@ def sample_db_with_records(in_memory_db):
     session = Session()
 
     # Create accounts
-    savings = Account(
-        name="Savings", accountType="asset", beginningBalance=5000.0, color="#00FF00"
-    )
-    checking = Account(
-        name="Checking", accountType="asset", beginningBalance=2000.0, color="#0000FF"
-    )
+    savings = Account(name="Savings", slug="savings", beginningBalance=5000.0)
+    checking = Account(name="Checking", slug="checking", beginningBalance=2000.0)
     credit_card = Account(
-        name="Credit Card",
-        accountType="liability",
-        beginningBalance=-500.0,
-        color="#FF0000",
+        name="Credit Card", slug="credit-card", beginningBalance=-500.0
     )
     session.add_all([savings, checking, credit_card])
     session.commit()
 
     # Create categories (hierarchical)
-    food = Category(name="Food", nature="Need", color="#FF6B6B")
+    from bagels.models.category import Nature
+
+    food = Category(name="Food", slug="food", nature=Nature.NEED, color="#FF6B6B")
+    session.add(food)
+    session.flush()
+
     groceries = Category(
-        name="Groceries", nature="Need", color="#FF6B6B", parentId=food.id
+        name="Groceries",
+        slug="groceries",
+        nature=Nature.NEED,
+        color="#FF6B6B",
+        parentCategoryId=food.id,
     )
     restaurants = Category(
-        name="Restaurants", nature="Want", color="#FF6B6B", parentId=food.id
+        name="Restaurants",
+        slug="restaurants",
+        nature=Nature.WANT,
+        color="#FF6B6B",
+        parentCategoryId=food.id,
     )
-    transport = Category(name="Transport", nature="Need", color="#4ECDC4")
-    entertainment = Category(name="Entertainment", nature="Want", color="#95E1D3")
-    session.add_all([food, groceries, restaurants, transport, entertainment])
+    transport = Category(
+        name="Transport", slug="transport", nature=Nature.NEED, color="#4ECDC4"
+    )
+    entertainment = Category(
+        name="Entertainment", slug="entertainment", nature=Nature.WANT, color="#95E1D3"
+    )
+    session.add_all([groceries, restaurants, transport, entertainment])
     session.commit()
 
     # Refresh to get IDs
