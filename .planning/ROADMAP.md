@@ -86,7 +86,13 @@ Plans:
 6. Optional auto-push to remote configured via config file
 7. System auto-pulls remote changes on startup
 
-**Plans:** TBD
+**Plans:** 4 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — GitConfig Pydantic model + git/operations.py (commit, push, pull, status, log helpers)
+- [ ] 03-02-PLAN.md — Manager hooks for all 5 entities + export_records_for_month targeted helper
+- [ ] 03-03-PLAN.md — bagels git CLI command group (sync, pull, status, log) registered in __main__.py
+- [ ] 03-04-PLAN.md — Startup YAML import Textual worker with optional auto-pull in app.py
 
 ---
 
@@ -115,7 +121,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Foundation | 0/6 | Planning complete | - |
 | 2. CLI Query Layer | 2/8 | In Progress|  |
-| 3. Automation | 0/7 | Not started | - |
+| 3. Automation | 0/4 | Planning complete | - |
 | 4. Verification | 0/5 | Not started | - |
 
 ## Coverage
@@ -144,3 +150,4 @@ Plans:
 *Plans created for Phase 1: 2026-03-14*
 *Plan split (01-01 → 01-01 + 01-01b): 2026-03-14*
 *FMT-04 de-scoped: 2026-03-14*
+*Plans created for Phase 3: 2026-03-16*
