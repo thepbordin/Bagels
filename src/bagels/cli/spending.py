@@ -72,20 +72,20 @@ def spending_by_category(month, format):
             )
             table.add_column("Category", style="cyan", width=30)
             table.add_column("Amount", justify="right", style="yellow", width=15)
-            table.add_column("Count", justify="right", style="white", width=10)
+            table.add_column("Percentage", justify="right", style="white", width=12)
 
             for item in spending_data:
                 table.add_row(
                     item["category"],
                     f"${item['amount']:.2f}",
-                    str(item["count"]),
+                    f"{item['percentage']:.1f}%",
                 )
 
             # Add total row
             table.add_row(
                 "TOTAL",
                 f"${total_amount:.2f}",
-                str(sum(item["count"] for item in spending_data)),
+                "100.0%",
                 style="bold yellow",
             )
 
@@ -146,20 +146,17 @@ def spending_by_day(month, format):
             )
             table.add_column("Date", style="green", width=12)
             table.add_column("Amount", justify="right", style="yellow", width=15)
-            table.add_column("Count", justify="right", style="white", width=10)
 
             for item in spending_data:
                 table.add_row(
                     item["date"],
                     f"${item['amount']:.2f}",
-                    str(item["count"]),
                 )
 
             # Add summary row
             table.add_row(
                 "AVERAGE",
                 f"${daily_avg:.2f}",
-                "",
                 style="bold yellow",
             )
 
