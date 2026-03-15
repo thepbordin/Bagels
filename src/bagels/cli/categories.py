@@ -10,7 +10,7 @@ from rich.table import Table
 from rich.console import Console
 from rich.text import Text
 
-from bagels.models.database.app import get_session
+from bagels.models.database.app import Session
 from bagels.managers.categories import get_all_categories_tree
 from bagels.queries.formatters import to_json, to_yaml
 
@@ -33,7 +33,7 @@ def categories():
 )
 def categories_tree(format):
     """Show category hierarchy as a tree."""
-    session = next(get_session())
+    session = Session()
     try:
         # Get category tree from manager
         category_tree = get_all_categories_tree()
@@ -51,7 +51,6 @@ def categories_tree(format):
                     "name": category.name,
                     "nature": str(category.nature),
                     "color": category.color,
-                    "hidden": category.hidden,
                     "depth": depth,
                 }
                 if category.parentCategory:
@@ -68,7 +67,6 @@ def categories_tree(format):
                     "name": category.name,
                     "nature": str(category.nature),
                     "color": category.color,
-                    "hidden": category.hidden,
                     "depth": depth,
                 }
                 if category.parentCategory:
@@ -83,7 +81,6 @@ def categories_tree(format):
             table.add_column("Tree", style="white", width=40)
             table.add_column("Nature", style="green", width=12)
             table.add_column("Color", style="cyan", width=10)
-            table.add_column("Hidden", style="yellow", width=8)
 
             for category, node, depth in category_tree:
                 # Build tree string with node prefix
@@ -103,7 +100,6 @@ def categories_tree(format):
                     tree_text,
                     str(category.nature),
                     category.color,
-                    "Yes" if category.hidden else "No",
                 )
 
             console.print(table)

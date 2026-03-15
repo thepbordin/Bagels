@@ -9,7 +9,7 @@ import click
 from rich.table import Table
 from rich.console import Console
 
-from bagels.models.database.app import get_session
+from bagels.models.database.app import Session
 from bagels.queries.spending import (
     calculate_spending_by_category,
     calculate_spending_by_day,
@@ -36,7 +36,7 @@ def spending():
 )
 def spending_by_category(month, format):
     """Show spending breakdown by category."""
-    session = next(get_session())
+    session = Session()
     try:
         # Calculate spending by category
         spending_data = calculate_spending_by_category(session, month)
@@ -106,7 +106,7 @@ def spending_by_category(month, format):
 )
 def spending_by_day(month, format):
     """Show daily spending breakdown."""
-    session = next(get_session())
+    session = Session()
     try:
         # Calculate spending by day
         spending_data = calculate_spending_by_day(session, month)
