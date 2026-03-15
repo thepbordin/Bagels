@@ -1,3 +1,6 @@
+import logging
+import threading
+
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload, sessionmaker
 
@@ -5,6 +8,41 @@ from bagels.models.database.app import db_engine
 from bagels.models.record_template import RecordTemplate
 
 Session = sessionmaker(bind=db_engine)
+
+logger = logging.getLogger(__name__)
+
+
+def _trigger_entity_export() -> None:
+    """Export templates YAML in a background daemon thread."""
+    try:
+        import bagels.config as config_mod
+
+        if config_mod.CONFIG is None:
+            return
+
+        from bagels.export.exporter import export_templates
+        from bagels.locations import data_directory
+        from bagels.models.database.app import db_engine as _engine
+        from sqlalchemy.orm import sessionmaker as _sessionmaker
+
+        _Session = _sessionmaker(bind=_engine)
+        session = _Session()
+        try:
+            filepath = export_templates(session, data_directory())
+        finally:
+            session.close()
+
+        cfg = config_mod.CONFIG
+        if not getattr(getattr(cfg, "git", None), "enabled", False):
+            return
+        if not getattr(cfg.git, "auto_commit", False):
+            return
+
+        from bagels.git.operations import auto_commit_yaml
+
+        auto_commit_yaml(filepath, "chore(templates): sync templates yaml")
+    except Exception:
+        logger.exception("Auto-export hook failed for templates")
 
 
 # region c
@@ -16,6 +54,8 @@ def create_template(data):
         session.commit()
         session.refresh(new_template)
         session.expunge(new_template)
+        t = threading.Thread(target=_trigger_entity_export, daemon=True)
+        t.start()
         return new_template
     finally:
         session.close()
@@ -135,6 +175,8 @@ def update_template(recordtemplate_id, data):
             session.commit()
             session.refresh(recordtemplate)
             session.expunge(recordtemplate)
+            t = threading.Thread(target=_trigger_entity_export, daemon=True)
+            t.start()
         return recordtemplate
     finally:
         session.close()
@@ -203,6 +245,8 @@ def delete_template(recordtemplate_id):
                 template.order = recordtemplate.order + i
 
             session.commit()
+            t = threading.Thread(target=_trigger_entity_export, daemon=True)
+            t.start()
             return True
         return False
     finally:

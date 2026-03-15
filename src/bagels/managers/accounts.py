@@ -1,3 +1,5 @@
+import logging
+import threading
 from datetime import datetime
 
 from sqlalchemy import select
@@ -11,6 +13,44 @@ from bagels.models.split import Split
 
 Session = sessionmaker(bind=db_engine)
 
+logger = logging.getLogger(__name__)
+
+
+def _trigger_entity_export() -> None:
+    """Export accounts YAML in a background daemon thread.
+
+    Swallows all exceptions so CRUD operations are never blocked.
+    """
+    try:
+        import bagels.config as config_mod
+
+        if config_mod.CONFIG is None:
+            return
+
+        from bagels.export.exporter import export_accounts
+        from bagels.locations import data_directory
+        from bagels.models.database.app import db_engine as _engine
+        from sqlalchemy.orm import sessionmaker as _sessionmaker
+
+        _Session = _sessionmaker(bind=_engine)
+        session = _Session()
+        try:
+            filepath = export_accounts(session, data_directory())
+        finally:
+            session.close()
+
+        cfg = config_mod.CONFIG
+        if not getattr(getattr(cfg, "git", None), "enabled", False):
+            return
+        if not getattr(cfg.git, "auto_commit", False):
+            return
+
+        from bagels.git.operations import auto_commit_yaml
+
+        auto_commit_yaml(filepath, "chore(accounts): sync accounts yaml")
+    except Exception:
+        logger.exception("Auto-export hook failed for accounts")
+
 
 # region Create
 
@@ -23,6 +63,8 @@ def create_account(data):
         session.commit()
         session.refresh(new_account)
         session.expunge(new_account)
+        t = threading.Thread(target=_trigger_entity_export, daemon=True)
+        t.start()
         return new_account
     finally:
         session.close()
@@ -169,6 +211,8 @@ def update_account(account_id, data):
             session.commit()
             session.refresh(account)
             session.expunge(account)
+            t = threading.Thread(target=_trigger_entity_export, daemon=True)
+            t.start()
         return account
     finally:
         session.close()
@@ -184,6 +228,8 @@ def delete_account(account_id):
         if account:
             account.deletedAt = datetime.now()
             session.commit()
+            t = threading.Thread(target=_trigger_entity_export, daemon=True)
+            t.start()
             return True
         return False
     finally:

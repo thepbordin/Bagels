@@ -328,7 +328,9 @@ class TestExportRecordsForMonth:
         account = Account(name="Test Account", beginningBalance=0.0)
         session.add(account)
         session.flush()
-        category = Category(name="Test Category", nature="expense")
+        from bagels.models.category import Nature
+
+        category = Category(name="Test Category", nature=Nature.NEED, color="#AABBCC")
         session.add(category)
         session.flush()
 
