@@ -8,14 +8,35 @@ for testing CLI query commands.
 import pytest
 from click.testing import CliRunner
 from datetime import datetime, timedelta
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
+# Initialize config BEFORE importing models
+from bagels.config import Config, config_file
+import bagels.config as config_module
+import yaml
+import warnings
+
+# Create config file if needed
+if not config_file().exists():
+    config_file().parent.mkdir(parents=True, exist_ok=True)
+    with open(config_file(), "w") as f:
+        yaml.dump(Config.get_default().model_dump(), f)
+
+# Load config
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    config_module.CONFIG = Config()
 
 from bagels.models.account import Account
 from bagels.models.category import Category
 from bagels.models.record import Record
 from bagels.models.person import Person
-from bagels.models.database.db import Base
+from bagels.models.database.app import init_db, Session
+from bagels.locations import set_custom_root
+
+# Import all models to ensure relationships are properly configured
+from bagels.models import split
 
 
 @pytest.fixture
@@ -25,25 +46,26 @@ def cli_runner():
 
 
 @pytest.fixture
-def in_memory_db():
-    """Create in-memory SQLite database for testing."""
-    engine = create_engine("sqlite:///:memory:")
-    Base.metadata.create_all(engine)
-    return engine
-
-
-@pytest.fixture
-def sample_db_with_records(in_memory_db):
+def sample_db_with_records():
     """
-    In-memory database with test data for CLI testing.
+    Temporary file-based database with test data for CLI testing.
 
     Creates:
     - 3 sample accounts (Savings, Checking, Credit Card)
     - 5 sample categories (Food, Transport, Entertainment nested hierarchically)
     - 20-30 sample records spanning 2-3 months
+
+    Uses a temporary directory to ensure CLI commands use test database.
     """
-    Session = sessionmaker(bind=in_memory_db)
-    session = Session()
+    with TemporaryDirectory() as tmpdir:
+        # Set custom root to temporary directory
+        set_custom_root(tmpdir)
+
+        # Initialize database in temp directory
+        init_db()
+
+        # Create session
+        session = Session()
 
     # Create accounts
     savings = Account(name="Savings", slug="savings", beginningBalance=5000.0)
@@ -52,7 +74,7 @@ def sample_db_with_records(in_memory_db):
         name="Credit Card", slug="credit-card", beginningBalance=-500.0
     )
     session.add_all([savings, checking, credit_card])
-    session.commit()
+    session.flush()  # Flush to get IDs but don't commit yet
 
     # Create categories (hierarchical)
     from bagels.models.category import Nature
@@ -82,7 +104,7 @@ def sample_db_with_records(in_memory_db):
         name="Entertainment", slug="entertainment", nature=Nature.WANT, color="#95E1D3"
     )
     session.add_all([groceries, restaurants, transport, entertainment])
-    session.commit()
+    session.flush()  # Flush to get IDs but don't commit yet
 
     # Refresh to get IDs
     session.flush()
@@ -152,7 +174,9 @@ def sample_db_with_records(in_memory_db):
 
     yield session
 
+    # Cleanup
     session.close()
+    set_custom_root(None)  # Reset custom root
 
 
 @pytest.fixture

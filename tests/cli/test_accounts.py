@@ -1,43 +1,96 @@
 """
-Placeholder tests for accounts command (CLI-04).
+Tests for accounts command (CLI-04).
 
-Tests will be implemented in Plan 02-03.
+Tests account listing with multiple output formats.
 """
 
 import pytest
-from tests.cli.conftest import cli_runner, sample_db_with_records
+import json
+from click.testing import CliRunner
 
-# Import will be added when CLI module is created
-# from bagels.cli.accounts import accounts
+from bagels.cli.accounts import accounts
 
 
 def test_accounts_list_default(cli_runner, sample_db_with_records):
-    """Test accounts list with table format."""
-    # Placeholder: Will invoke accounts list command
-    # result = cli_runner.invoke(accounts, ['list'])
-    # assert result.exit_code == 0
-    # assert 'Savings' in result.output
-    # assert 'Checking' in result.output
-    assert True  # Placeholder test
-
-
-def test_accounts_yaml_format(cli_runner, sample_db_with_records):
-    """Test YAML output format (CLI-04 requirement)."""
-    # Placeholder: Will test YAML output format
-    # result = cli_runner.invoke(accounts, ['list', '--format', 'yaml'])
-    # assert result.exit_code == 0
-    # import yaml
-    # data = yaml.safe_load(result.output)
-    # assert 'accounts' in data
-    assert True  # Placeholder test
+    """Test accounts list with default table format."""
+    result = cli_runner.invoke(accounts, ["list"])
+    assert result.exit_code == 0
+    # Check that account names are displayed
+    assert "Savings" in result.output
+    assert "Checking" in result.output
+    assert "Credit Card" in result.output
+    # Check that balances are displayed
+    assert "5000" in result.output or "5000.00" in result.output  # Savings
+    assert "2000" in result.output or "2000.00" in result.output  # Checking
 
 
 def test_accounts_json_format(cli_runner, sample_db_with_records):
     """Test JSON output format."""
-    # Placeholder: Will test JSON output format
-    # result = cli_runner.invoke(accounts, ['list', '--format', 'json'])
-    # assert result.exit_code == 0
-    # import json
-    # data = json.loads(result.output)
-    # assert 'accounts' in data
-    assert True  # Placeholder test
+    result = cli_runner.invoke(accounts, ["list", "--format", "json"])
+    assert result.exit_code == 0
+    # Parse JSON
+    data = json.loads(result.output)
+    assert isinstance(data, list)
+    assert len(data) == 5  # 5 accounts in sample data
+    # Check first account structure
+    assert "id" in data[0]
+    assert "name" in data[0]
+    assert "type" in data[0]
+    assert "beginning_balance" in data[0]
+
+
+def test_accounts_yaml_format(cli_runner, sample_db_with_records):
+    """Test YAML output format (CLI-04 requirement)."""
+    result = cli_runner.invoke(accounts, ["list", "--format", "yaml"])
+    assert result.exit_code == 0
+    # Check YAML format
+    assert "- id:" in result.output or "- name:" in result.output
+    assert "Savings" in result.output
+    assert "Checking" in result.output
+
+
+def test_accounts_negative_balance(cli_runner, sample_db_with_records):
+    """Test that negative balances are displayed correctly."""
+    result = cli_runner.invoke(accounts, ["list"])
+    assert result.exit_code == 0
+    # Credit Card has -1500 beginning balance
+    assert "Credit Card" in result.output
+    # Negative balance should be visible
+    assert "1500" in result.output or "1500.00" in result.output
+
+
+def test_accounts_empty(cli_runner):
+    """Test accounts list with empty database."""
+    # Use a fresh session with no accounts
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+    from bagels.models.database.db import Base
+
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(engine)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+
+    result = cli_runner.invoke(accounts, ["list"])
+    assert result.exit_code == 0
+    # Should show message about no accounts
+    assert "No accounts found" in result.output or len(result.output.strip()) == 0
+
+    session.close()
+
+
+def test_accounts_list_command(cli_runner, sample_db_with_records):
+    """Test that accounts list is accessible via CLI."""
+    # Test help text
+    result = cli_runner.invoke(accounts, ["--help"])
+    assert result.exit_code == 0
+    assert "list" in result.output
+    assert "Query and manage accounts" in result.output
+
+
+def test_accounts_list_help(cli_runner, sample_db_with_records):
+    """Test accounts list subcommand help."""
+    result = cli_runner.invoke(accounts, ["list", "--help"])
+    assert result.exit_code == 0
+    assert "List all accounts" in result.output
+    assert "--format" in result.output or "-f" in result.output
