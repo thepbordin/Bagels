@@ -116,8 +116,13 @@ def _extract_model_schema(model_class) -> dict:
         }
         relationships.append(rel_info)
 
+    # Get table name - ensure it's a string
+    table_name = (
+        str(mapper.tables[0].name) if mapper.tables else str(model_class.__tablename__)
+    )
+
     return {
-        "table_name": mapper.localtable.name,
+        "table_name": table_name,
         "fields": fields,
         "relationships": relationships,
     }
