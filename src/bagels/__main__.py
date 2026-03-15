@@ -125,10 +125,12 @@ def locate(thing_to_locate: str) -> None:
 
 # Add export/import/init commands
 from bagels.cli import export_command, import_command, init_command
+from bagels.cli.records import records
 
 cli.add_command(export_command, name="export")
 cli.add_command(import_command, name="import")
 cli.add_command(init_command, name="init")
+cli.add_command(records, name="records")
 
 
 if __name__ == "__main__":
