@@ -48,7 +48,9 @@ class TestRecordExportSingleMonth:
 
         # Assert - Verify slug-based IDs
         for slug in data["records"].keys():
-            assert slug.startswith("r_2026-03-"), f"Slug {slug} should use r_YYYY-MM-DD_### format"
+            assert slug.startswith("r_2026-03-"), (
+                f"Slug {slug} should use r_YYYY-MM-DD_### format"
+            )
             assert "_" in slug, "Slug should have underscore separators"
 
 
@@ -92,13 +94,13 @@ class TestRecordExportMultipleMonths:
 
         for i, date in enumerate(dates):
             record = Record(
-                label=f"Record {i+1}",
+                label=f"Record {i + 1}",
                 amount=100.0 * (i + 1),
                 date=date,
                 accountId=account.id,
                 categoryId=category.id,
                 isIncome=False,
-                isTransfer=False
+                isTransfer=False,
             )
             in_memory_db.add(record)
 
@@ -134,9 +136,15 @@ class TestRecordExportMultipleMonths:
         feb_dates = [r["date"][:7] for r in feb_data["records"].values()]
         mar_dates = [r["date"][:7] for r in mar_data["records"].values()]
 
-        assert all(d == "2026-01" for d in jan_dates), "All January records should be in January file"
-        assert all(d == "2026-02" for d in feb_dates), "All February records should be in February file"
-        assert all(d == "2026-03" for d in mar_dates), "All March records should be in March file"
+        assert all(d == "2026-01" for d in jan_dates), (
+            "All January records should be in January file"
+        )
+        assert all(d == "2026-02" for d in feb_dates), (
+            "All February records should be in February file"
+        )
+        assert all(d == "2026-03" for d in mar_dates), (
+            "All March records should be in March file"
+        )
 
 
 class TestRecordSlugGeneration:
@@ -165,13 +173,13 @@ class TestRecordSlugGeneration:
         test_date = datetime(2026, 3, 14)
         for i in range(3):
             record = Record(
-                label=f"Record {i+1}",
+                label=f"Record {i + 1}",
                 amount=100.0 * (i + 1),
                 date=test_date,
                 accountId=account.id,
                 categoryId=category.id,
                 isIncome=False,
-                isTransfer=False
+                isTransfer=False,
             )
             in_memory_db.add(record)
 
@@ -231,7 +239,7 @@ class TestRecordExportFields:
             categoryId=category.id,
             personId=person.id,
             isIncome=False,
-            isTransfer=False
+            isTransfer=False,
         )
         in_memory_db.add(record)
         in_memory_db.commit()
@@ -298,4 +306,120 @@ class TestRecordExportEmpty:
         records_dir = temp_directory / "records"
         if records_dir.exists():
             yaml_files = list(records_dir.glob("*.yaml"))
-            assert len(yaml_files) == 0, "No YAML files should be created when no records exist"
+            assert len(yaml_files) == 0, (
+                "No YAML files should be created when no records exist"
+            )
+
+
+# ---------------------------------------------------------------------------
+# Tests for export_records_for_month (targeted single-month export)
+# ---------------------------------------------------------------------------
+
+
+class TestExportRecordsForMonth:
+    """Test the targeted single-month export helper."""
+
+    def _make_records(self, session, dates: list[datetime]) -> None:
+        """Helper: create minimal records on the given dates."""
+        from bagels.models.account import Account
+        from bagels.models.category import Category
+        from bagels.models.record import Record
+
+        account = Account(name="Test Account", beginningBalance=0.0)
+        session.add(account)
+        session.flush()
+        category = Category(name="Test Category", nature="expense")
+        session.add(category)
+        session.flush()
+
+        for i, date in enumerate(dates):
+            record = Record(
+                label=f"Record {i + 1}",
+                amount=float(10 * (i + 1)),
+                date=date,
+                accountId=account.id,
+                categoryId=category.id,
+                isIncome=False,
+                isTransfer=False,
+            )
+            session.add(record)
+
+        session.commit()
+
+    def test_export_for_month_with_records_writes_yaml(
+        self, in_memory_db: Session, temp_directory: Path
+    ):
+        """
+        Test 1: export_records_for_month with records in that month writes records/YYYY-MM.yaml.
+        """
+        self._make_records(
+            in_memory_db,
+            [datetime(2026, 3, 1), datetime(2026, 3, 15), datetime(2026, 3, 31)],
+        )
+
+        from bagels.export.exporter import export_records_for_month
+
+        filepath = export_records_for_month(in_memory_db, temp_directory, 2026, 3)
+
+        assert filepath.exists(), "YAML file should be written"
+        assert filepath == temp_directory / "records" / "2026-03.yaml"
+
+        import yaml
+
+        with open(filepath) as f:
+            data = yaml.safe_load(f)
+
+        assert "records" in data
+        assert len(data["records"]) == 3
+
+    def test_export_for_month_with_no_records_writes_empty_file(
+        self, in_memory_db: Session, temp_directory: Path
+    ):
+        """
+        Test 2: export_records_for_month with NO records writes records/YYYY-MM.yaml
+        with empty records dict (not skipping the file).
+        """
+        from bagels.export.exporter import export_records_for_month
+
+        filepath = export_records_for_month(in_memory_db, temp_directory, 2026, 4)
+
+        assert filepath.exists(), "File must be written even for an empty month"
+
+        import yaml
+
+        with open(filepath) as f:
+            data = yaml.safe_load(f)
+
+        assert "records" in data
+        assert data["records"] == {} or data["records"] is None
+
+    def test_export_for_month_excludes_adjacent_months(
+        self, in_memory_db: Session, temp_directory: Path
+    ):
+        """
+        Test 3: export_records_for_month only includes records from the specified month.
+        """
+        self._make_records(
+            in_memory_db,
+            [
+                datetime(2026, 2, 28),  # February — must NOT appear
+                datetime(2026, 3, 1),  # March
+                datetime(2026, 3, 15),  # March
+                datetime(2026, 4, 1),  # April — must NOT appear
+            ],
+        )
+
+        from bagels.export.exporter import export_records_for_month
+
+        filepath = export_records_for_month(in_memory_db, temp_directory, 2026, 3)
+
+        import yaml
+
+        with open(filepath) as f:
+            data = yaml.safe_load(f)
+
+        assert len(data["records"]) == 2, "Only March records should be included"
+        for record_data in data["records"].values():
+            assert record_data["date"].startswith("2026-03"), (
+                "All records should be from March 2026"
+            )
