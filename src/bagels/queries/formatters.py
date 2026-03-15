@@ -112,10 +112,10 @@ def format_categories(categories: list[Category], output_format: str = "table") 
 
         for category in categories:
             category_id = str(category.id)
-            parent_name = category.parent.name if category.parent else "None"
-            table.add_row(
-                category_id, category.name, category.nature or "None", parent_name
+            parent_name = (
+                category.parentCategory.name if category.parentCategory else "None"
             )
+            table.add_row(category_id, category.name, str(category.nature), parent_name)
 
         with console.capture() as capture:
             console.print(table)

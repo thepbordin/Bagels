@@ -38,7 +38,7 @@
 - [ ] **CLI-07**: `bagels query spending --by-day --month` command
 - [ ] **CLI-08**: `bagels query trends --months` command with category filter
 - [x] **CLI-09**: Support JSON output format for all query commands
-- [ ] **CLI-10**: `bagels add record --from-yaml` command for batch import
+- [x] **CLI-10**: `bagels add record --from-yaml` command for batch import
 
 ### LLM Integration
 
@@ -149,7 +149,7 @@
 | CLI-07 | Phase 2 | Pending |
 | CLI-08 | Phase 2 | Pending |
 | CLI-09 | Phase 2 | Complete |
-| CLI-10 | Phase 2 | Pending |
+| CLI-10 | Phase 2 | Complete |
 | LLM-01 | Phase 2 | Pending |
 | LLM-02 | Phase 2 | Pending |
 | LLM-03 | Phase 2 | Pending |
