@@ -86,7 +86,7 @@ Plans:
 6. Optional auto-push to remote configured via config file
 7. System auto-pulls remote changes on startup
 
-**Plans:** 1/4 plans executed
+**Plans:** 2/4 plans executed
 
 Plans:
 - [ ] 03-01-PLAN.md — GitConfig Pydantic model + git/operations.py (commit, push, pull, status, log helpers)
@@ -121,7 +121,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Foundation | 0/6 | Planning complete | - |
 | 2. CLI Query Layer | 2/8 | In Progress|  |
-| 3. Automation | 1/4 | In Progress|  |
+| 3. Automation | 2/4 | In Progress|  |
 | 4. Verification | 0/5 | Not started | - |
 
 ## Coverage
