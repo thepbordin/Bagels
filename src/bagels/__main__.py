@@ -133,6 +133,7 @@ from bagels.cli.spending import spending
 from bagels.cli.trends import trends
 from bagels.cli.llm import llm
 from bagels.cli.schema import schema
+from bagels.cli.git import git as git_command
 
 cli.add_command(export_command, name="export")
 cli.add_command(import_command, name="import")
@@ -145,6 +146,7 @@ cli.add_command(spending, name="spending")
 cli.add_command(trends, name="trends")
 cli.add_command(llm, name="llm")
 cli.add_command(schema, name="schema")
+cli.add_command(git_command, name="git")
 
 
 if __name__ == "__main__":
