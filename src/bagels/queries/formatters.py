@@ -82,13 +82,12 @@ def format_accounts(accounts: list[Account], output_format: str = "table") -> st
         table = Table(title="Accounts", show_header=True, header_style="bold magenta")
         table.add_column("ID", style="cyan", width=8)
         table.add_column("Name", style="white", width=25)
-        table.add_column("Type", style="green", width=12)
         table.add_column("Balance", justify="right", style="yellow", width=15)
 
         for account in accounts:
             account_id = str(account.id)
             balance_str = f"${account.beginningBalance:.2f}"
-            table.add_row(account_id, account.name, account.accountType, balance_str)
+            table.add_row(account_id, account.name, balance_str)
 
         with console.capture() as capture:
             console.print(table)
@@ -213,9 +212,9 @@ def _account_to_dict(account: Account) -> dict[str, Any]:
     return {
         "id": account.id,
         "name": account.name,
-        "type": account.accountType,
         "beginning_balance": account.beginningBalance,
-        "color": account.color,
+        "description": account.description,
+        "hidden": account.hidden,
     }
 
 
