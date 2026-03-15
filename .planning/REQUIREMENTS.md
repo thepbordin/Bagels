@@ -29,15 +29,15 @@
 
 ### CLI Query Interface
 
-- [ ] **CLI-01**: `bagels query records --month` command with table output
-- [ ] **CLI-02**: `bagels query records --category` with date range filtering
-- [ ] **CLI-03**: `bagels query summary --month` command for financial overview
+- [x] **CLI-01**: `bagels query records --month` command with table output
+- [x] **CLI-02**: `bagels query records --category` with date range filtering
+- [x] **CLI-03**: `bagels query summary --month` command for financial overview
 - [ ] **CLI-04**: `bagels query accounts --format yaml` command
 - [ ] **CLI-05**: `bagels query categories --tree` command
 - [ ] **CLI-06**: `bagels query spending --by-category --month` command
 - [ ] **CLI-07**: `bagels query spending --by-day --month` command
 - [ ] **CLI-08**: `bagels query trends --months` command with category filter
-- [ ] **CLI-09**: Support JSON output format for all query commands
+- [x] **CLI-09**: Support JSON output format for all query commands
 - [ ] **CLI-10**: `bagels add record --from-yaml` command for batch import
 
 ### LLM Integration
@@ -140,15 +140,15 @@
 | GIT-06 | Phase 3 | Pending |
 | GIT-07 | Phase 3 | Pending |
 | GIT-08 | Phase 3 | Pending |
-| CLI-01 | Phase 2 | Pending |
-| CLI-02 | Phase 2 | Pending |
-| CLI-03 | Phase 2 | Pending |
+| CLI-01 | Phase 2 | Complete |
+| CLI-02 | Phase 2 | Complete |
+| CLI-03 | Phase 2 | Complete |
 | CLI-04 | Phase 2 | Pending |
 | CLI-05 | Phase 2 | Pending |
 | CLI-06 | Phase 2 | Pending |
 | CLI-07 | Phase 2 | Pending |
 | CLI-08 | Phase 2 | Pending |
-| CLI-09 | Phase 2 | Pending |
+| CLI-09 | Phase 2 | Complete |
 | CLI-10 | Phase 2 | Pending |
 | LLM-01 | Phase 2 | Pending |
 | LLM-02 | Phase 2 | Pending |
