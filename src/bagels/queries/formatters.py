@@ -223,9 +223,12 @@ def _category_to_dict(category: Category) -> dict[str, Any]:
     result = {
         "id": category.id,
         "name": category.name,
-        "nature": category.nature,
+        "nature": str(category.nature),
         "color": category.color,
     }
-    if category.parent:
-        result["parent"] = {"id": category.parent.id, "name": category.parent.name}
+    if category.parentCategory:
+        result["parent"] = {
+            "id": category.parentCategory.id,
+            "name": category.parentCategory.name,
+        }
     return result

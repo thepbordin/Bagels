@@ -28,9 +28,19 @@ def parse_month(month_str: str | None) -> tuple[datetime, datetime] | None:
     if month_str is None:
         return None
 
+    # Validate format strictly: YYYY-MM
+    import re
+
+    if not re.match(r"^\d{4}-\d{2}$", month_str):
+        raise ValueError(f"Invalid month format '{month_str}'. Expected YYYY-MM format")
+
     try:
         # Parse YYYY-MM format
         year, month = map(int, month_str.split("-"))
+
+        # Validate month range
+        if month < 1 or month > 12:
+            raise ValueError(f"Month must be between 01 and 12, got {month:02d}")
 
         # Calculate month offset from current date
         now = datetime.now()
