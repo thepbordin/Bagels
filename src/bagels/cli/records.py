@@ -82,6 +82,9 @@ def list_records(
         except ValueError as e:
             raise click.ClickException(str(e))
 
+        # Order by date descending
+        query = query.order_by(Record.date.desc())
+
         # Apply limit (unless --all flag is set)
         if not all:
             query = query.limit(limit)
@@ -90,7 +93,7 @@ def list_records(
             limit_applied = None
 
         # Execute query
-        records = query.order_by(Record.date.desc()).all()
+        records = query.all()
 
         # Show warning if limit was hit
         if limit_applied and len(records) == limit_applied:
