@@ -65,7 +65,7 @@ Plans:
 4. User can view data schema via `bagels schema` commands for LLM context
 5. All query commands support structured output formats (table, JSON, YAML)
 
-**Plans:** TBD
+**Plans:** 2/8 plans executed
 
 ---
 
@@ -114,7 +114,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 0/6 | Planning complete | - |
-| 2. CLI Query Layer | 0/5 | Not started | - |
+| 2. CLI Query Layer | 2/8 | In Progress|  |
 | 3. Automation | 0/7 | Not started | - |
 | 4. Verification | 0/5 | Not started | - |
 
