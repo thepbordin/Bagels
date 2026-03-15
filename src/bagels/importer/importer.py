@@ -5,7 +5,7 @@ Imports YAML files into SQLite database with validation, backup creation,
 and referential integrity checks. YAML is authoritative - existing records
 are updated if slugs match.
 
-Requirements: DATA-06, FMT-01, FMT-02, FMT-03, FMT-05
+Requirements: DATA-06, DATA-08, FMT-01, FMT-02, FMT-03, FMT-05
 """
 
 import shutil
@@ -63,11 +63,11 @@ def import_accounts_from_yaml(yaml_data: dict, session: Session) -> Tuple[int, i
     create_backup()
 
     # Validate YAML first
-    is_valid, errors = validate_yaml(yaml_data, 'accounts', session)
+    is_valid, errors = validate_yaml(yaml_data, "accounts", session)
     if not is_valid:
         raise ValidationError("YAML validation failed", errors)
 
-    accounts_data = yaml_data.get('accounts', {})
+    accounts_data = yaml_data.get("accounts", {})
 
     for slug, account_data in accounts_data.items():
         # Check if account exists
@@ -76,7 +76,7 @@ def import_accounts_from_yaml(yaml_data: dict, session: Session) -> Tuple[int, i
         if existing:
             # Update existing account (YAML is authoritative)
             for key, value in account_data.items():
-                if key in ['createdAt', 'updatedAt']:
+                if key in ["createdAt", "updatedAt"]:
                     setattr(existing, key, datetime.fromisoformat(value))
                 else:
                     setattr(existing, key, value)
@@ -85,7 +85,7 @@ def import_accounts_from_yaml(yaml_data: dict, session: Session) -> Tuple[int, i
             # Create new account
             account = Account(slug=slug)
             for key, value in account_data.items():
-                if key in ['createdAt', 'updatedAt']:
+                if key in ["createdAt", "updatedAt"]:
                     setattr(account, key, datetime.fromisoformat(value))
                 else:
                     setattr(account, key, value)
@@ -116,11 +116,11 @@ def import_categories_from_yaml(yaml_data: dict, session: Session) -> Tuple[int,
     updated_count = 0
 
     create_backup()
-    is_valid, errors = validate_yaml(yaml_data, 'categories', session)
+    is_valid, errors = validate_yaml(yaml_data, "categories", session)
     if not is_valid:
         raise ValidationError("YAML validation failed", errors)
 
-    categories_data = yaml_data.get('categories', {})
+    categories_data = yaml_data.get("categories", {})
 
     for slug, category_data in categories_data.items():
         existing = session.query(Category).filter(Category.slug == slug).first()
@@ -128,14 +128,18 @@ def import_categories_from_yaml(yaml_data: dict, session: Session) -> Tuple[int,
         if existing:
             # Update existing category
             for key, value in category_data.items():
-                if key == 'parentSlug':
+                if key == "parentSlug":
                     # Resolve parentSlug to parent object
                     if value:
-                        parent = session.query(Category).filter(Category.slug == value).first()
+                        parent = (
+                            session.query(Category)
+                            .filter(Category.slug == value)
+                            .first()
+                        )
                         existing.parentCategoryId = parent.id if parent else None
                     else:
                         existing.parentCategoryId = None
-                elif key in ['createdAt', 'updatedAt']:
+                elif key in ["createdAt", "updatedAt"]:
                     setattr(existing, key, datetime.fromisoformat(value))
                 else:
                     setattr(existing, key, value)
@@ -144,11 +148,15 @@ def import_categories_from_yaml(yaml_data: dict, session: Session) -> Tuple[int,
             # Create new category
             category = Category(slug=slug)
             for key, value in category_data.items():
-                if key == 'parentSlug':
+                if key == "parentSlug":
                     if value:
-                        parent = session.query(Category).filter(Category.slug == value).first()
+                        parent = (
+                            session.query(Category)
+                            .filter(Category.slug == value)
+                            .first()
+                        )
                         category.parentCategoryId = parent.id if parent else None
-                elif key in ['createdAt', 'updatedAt']:
+                elif key in ["createdAt", "updatedAt"]:
                     setattr(category, key, datetime.fromisoformat(value))
                 else:
                     setattr(category, key, value)
@@ -179,11 +187,11 @@ def import_persons_from_yaml(yaml_data: dict, session: Session) -> Tuple[int, in
     updated_count = 0
 
     create_backup()
-    is_valid, errors = validate_yaml(yaml_data, 'persons', session)
+    is_valid, errors = validate_yaml(yaml_data, "persons", session)
     if not is_valid:
         raise ValidationError("YAML validation failed", errors)
 
-    persons_data = yaml_data.get('persons', {})
+    persons_data = yaml_data.get("persons", {})
 
     for slug, person_data in persons_data.items():
         existing = session.query(Person).filter(Person.slug == slug).first()
@@ -191,7 +199,7 @@ def import_persons_from_yaml(yaml_data: dict, session: Session) -> Tuple[int, in
         if existing:
             # Update existing person
             for key, value in person_data.items():
-                if key in ['createdAt', 'updatedAt']:
+                if key in ["createdAt", "updatedAt"]:
                     setattr(existing, key, datetime.fromisoformat(value))
                 else:
                     setattr(existing, key, value)
@@ -200,7 +208,7 @@ def import_persons_from_yaml(yaml_data: dict, session: Session) -> Tuple[int, in
             # Create new person
             person = Person(slug=slug)
             for key, value in person_data.items():
-                if key in ['createdAt', 'updatedAt']:
+                if key in ["createdAt", "updatedAt"]:
                     setattr(person, key, datetime.fromisoformat(value))
                 else:
                     setattr(person, key, value)
@@ -231,33 +239,45 @@ def import_templates_from_yaml(yaml_data: dict, session: Session) -> Tuple[int, 
     updated_count = 0
 
     create_backup()
-    is_valid, errors = validate_yaml(yaml_data, 'templates', session)
+    is_valid, errors = validate_yaml(yaml_data, "templates", session)
     if not is_valid:
         raise ValidationError("YAML validation failed", errors)
 
-    templates_data = yaml_data.get('templates', {})
+    templates_data = yaml_data.get("templates", {})
 
     for slug, template_data in templates_data.items():
-        existing = session.query(RecordTemplate).filter(RecordTemplate.slug == slug).first()
+        existing = (
+            session.query(RecordTemplate).filter(RecordTemplate.slug == slug).first()
+        )
 
         if existing:
             # Update existing template (YAML is authoritative)
             for key, value in template_data.items():
-                if key == 'accountSlug':
-                    account = session.query(Account).filter(Account.slug == value).first()
+                if key == "accountSlug":
+                    from bagels.models.account import Account
+
+                    account = (
+                        session.query(Account).filter(Account.slug == value).first()
+                    )
                     if account:
                         existing.accountId = account.id
-                elif key == 'categorySlug' and value:
-                    category = session.query(Category).filter(Category.slug == value).first()
+                elif key == "categorySlug" and value:
+                    from bagels.models.category import Category
+
+                    category = (
+                        session.query(Category).filter(Category.slug == value).first()
+                    )
                     if category:
                         existing.categoryId = category.id
-                elif key == 'personSlug' and value:
+                elif key == "personSlug" and value:
+                    from bagels.models.person import Person
+
                     person = session.query(Person).filter(Person.slug == value).first()
                     if person:
                         existing.personId = person.id
-                elif key == 'ordinal':
-                    setattr(existing, 'order', value)
-                elif key in ['createdAt', 'updatedAt']:
+                elif key == "ordinal":
+                    setattr(existing, "order", value)
+                elif key in ["createdAt", "updatedAt"]:
                     setattr(existing, key, datetime.fromisoformat(value))
                 else:
                     setattr(existing, key, value)
@@ -266,21 +286,31 @@ def import_templates_from_yaml(yaml_data: dict, session: Session) -> Tuple[int, 
             # Create new template
             template = RecordTemplate(slug=slug)
             for key, value in template_data.items():
-                if key == 'accountSlug':
-                    account = session.query(Account).filter(Account.slug == value).first()
+                if key == "accountSlug":
+                    from bagels.models.account import Account
+
+                    account = (
+                        session.query(Account).filter(Account.slug == value).first()
+                    )
                     if account:
                         template.accountId = account.id
-                elif key == 'categorySlug' and value:
-                    category = session.query(Category).filter(Category.slug == value).first()
+                elif key == "categorySlug" and value:
+                    from bagels.models.category import Category
+
+                    category = (
+                        session.query(Category).filter(Category.slug == value).first()
+                    )
                     if category:
                         template.categoryId = category.id
-                elif key == 'personSlug' and value:
+                elif key == "personSlug" and value:
+                    from bagels.models.person import Person
+
                     person = session.query(Person).filter(Person.slug == value).first()
                     if person:
                         template.personId = person.id
-                elif key == 'ordinal':
-                    setattr(template, 'order', value)
-                elif key in ['createdAt', 'updatedAt']:
+                elif key == "ordinal":
+                    setattr(template, "order", value)
+                elif key in ["createdAt", "updatedAt"]:
                     setattr(template, key, datetime.fromisoformat(value))
                 else:
                     setattr(template, key, value)
@@ -314,11 +344,11 @@ def import_records_from_yaml(yaml_data: dict, session: Session) -> Tuple[int, in
     updated_count = 0
 
     create_backup()
-    is_valid, errors = validate_yaml(yaml_data, 'records', session)
+    is_valid, errors = validate_yaml(yaml_data, "records", session)
     if not is_valid:
         raise ValidationError("YAML validation failed", errors)
 
-    records_data = yaml_data.get('records', {})
+    records_data = yaml_data.get("records", {})
 
     for slug, record_data in records_data.items():
         existing = session.query(Record).filter(Record.slug == slug).first()
@@ -326,23 +356,29 @@ def import_records_from_yaml(yaml_data: dict, session: Session) -> Tuple[int, in
         if existing:
             # Update existing record (YAML is authoritative)
             for key, value in record_data.items():
-                if key == 'accountSlug':
-                    account = session.query(Account).filter(Account.slug == value).first()
+                if key == "accountSlug":
+                    account = (
+                        session.query(Account).filter(Account.slug == value).first()
+                    )
                     if account:
                         existing.accountId = account.id
-                elif key == 'categorySlug' and value:
-                    category = session.query(Category).filter(Category.slug == value).first()
+                elif key == "categorySlug" and value:
+                    category = (
+                        session.query(Category).filter(Category.slug == value).first()
+                    )
                     if category:
                         existing.categoryId = category.id
-                elif key == 'personSlug' and value:
+                elif key == "personSlug" and value:
                     person = session.query(Person).filter(Person.slug == value).first()
                     if person:
                         existing.personId = person.id
-                elif key == 'transferToAccountSlug' and value:
-                    account = session.query(Account).filter(Account.slug == value).first()
+                elif key == "transferToAccountSlug" and value:
+                    account = (
+                        session.query(Account).filter(Account.slug == value).first()
+                    )
                     if account:
                         existing.transferToAccountId = account.id
-                elif key in ['date', 'createdAt', 'updatedAt']:
+                elif key in ["date", "createdAt", "updatedAt"]:
                     setattr(existing, key, datetime.fromisoformat(value))
                 else:
                     setattr(existing, key, value)
@@ -351,23 +387,29 @@ def import_records_from_yaml(yaml_data: dict, session: Session) -> Tuple[int, in
             # Create new record
             record = Record(slug=slug)
             for key, value in record_data.items():
-                if key == 'accountSlug':
-                    account = session.query(Account).filter(Account.slug == value).first()
+                if key == "accountSlug":
+                    account = (
+                        session.query(Account).filter(Account.slug == value).first()
+                    )
                     if account:
                         record.accountId = account.id
-                elif key == 'categorySlug' and value:
-                    category = session.query(Category).filter(Category.slug == value).first()
+                elif key == "categorySlug" and value:
+                    category = (
+                        session.query(Category).filter(Category.slug == value).first()
+                    )
                     if category:
                         record.categoryId = category.id
-                elif key == 'personSlug' and value:
+                elif key == "personSlug" and value:
                     person = session.query(Person).filter(Person.slug == value).first()
                     if person:
                         record.personId = person.id
-                elif key == 'transferToAccountSlug' and value:
-                    account = session.query(Account).filter(Account.slug == value).first()
+                elif key == "transferToAccountSlug" and value:
+                    account = (
+                        session.query(Account).filter(Account.slug == value).first()
+                    )
                     if account:
                         record.transferToAccountId = account.id
-                elif key in ['date', 'createdAt', 'updatedAt']:
+                elif key in ["date", "createdAt", "updatedAt"]:
                     setattr(record, key, datetime.fromisoformat(value))
                 else:
                     setattr(record, key, value)
@@ -376,3 +418,70 @@ def import_records_from_yaml(yaml_data: dict, session: Session) -> Tuple[int, in
 
     session.commit()
     return imported_count, updated_count
+
+
+def run_full_import() -> None:
+    """
+    Import all YAML files from the data directory into SQLite.
+
+    Reads accounts.yaml, categories.yaml, persons.yaml, templates.yaml, and
+    all monthly record files (records/YYYY-MM.yaml) from data_directory().
+    Missing files are silently skipped — the database is only updated for
+    entities present in YAML.
+
+    Requirements: DATA-08
+    """
+    import yaml as _yaml
+    from sqlalchemy.orm import sessionmaker
+
+    from bagels.locations import data_directory
+    from bagels.models.database.app import db_engine
+
+    data_dir = data_directory()
+    _Session = sessionmaker(bind=db_engine)
+    session = _Session()
+
+    try:
+        # --- accounts ---
+        accounts_file = data_dir / "accounts.yaml"
+        if accounts_file.exists():
+            with open(accounts_file) as f:
+                yaml_data = _yaml.safe_load(f) or {}
+            if yaml_data.get("accounts"):
+                import_accounts_from_yaml(yaml_data, session)
+
+        # --- categories ---
+        categories_file = data_dir / "categories.yaml"
+        if categories_file.exists():
+            with open(categories_file) as f:
+                yaml_data = _yaml.safe_load(f) or {}
+            if yaml_data.get("categories"):
+                import_categories_from_yaml(yaml_data, session)
+
+        # --- persons ---
+        persons_file = data_dir / "persons.yaml"
+        if persons_file.exists():
+            with open(persons_file) as f:
+                yaml_data = _yaml.safe_load(f) or {}
+            if yaml_data.get("persons"):
+                import_persons_from_yaml(yaml_data, session)
+
+        # --- templates ---
+        templates_file = data_dir / "templates.yaml"
+        if templates_file.exists():
+            with open(templates_file) as f:
+                yaml_data = _yaml.safe_load(f) or {}
+            if yaml_data.get("templates"):
+                import_templates_from_yaml(yaml_data, session)
+
+        # --- records (monthly files) ---
+        records_dir = data_dir / "records"
+        if records_dir.is_dir():
+            for record_file in sorted(records_dir.glob("*.yaml")):
+                with open(record_file) as f:
+                    yaml_data = _yaml.safe_load(f) or {}
+                if yaml_data.get("records"):
+                    import_records_from_yaml(yaml_data, session)
+
+    finally:
+        session.close()

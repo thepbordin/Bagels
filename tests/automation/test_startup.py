@@ -13,7 +13,7 @@ Tests confirm:
 """
 
 import inspect
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
 
 # ---------------------------------------------------------------------------
@@ -31,28 +31,34 @@ def _make_config(*, git_enabled: bool = False, auto_pull: bool = False) -> Magic
     return cfg
 
 
-def _call_worker(app_instance: MagicMock, config_value, mock_pull, mock_import) -> None:
+def _invoke_worker(config_value, mock_pull, mock_import) -> None:
     """
-    Call the underlying worker function directly, bypassing the Textual @work decorator.
+    Invoke run_startup_import.__wrapped__ on a minimal stub instance.
 
-    The decorator wraps the function; we want to invoke the raw logic. We find
-    the method on the class and call it directly so tests stay fast/unit-level.
+    We bypass App.__init__ (which needs a running Textual environment) via
+    App.__new__ and stub only what the worker body actually uses:
+      - self.notify() — called via call_from_thread callback
+      - self.app.call_from_thread() — calls the callback synchronously in tests
+
+    The `app` property on a Textual App returns `self`, so we patch it via
+    patch.object with a PropertyMock to return the instance itself, then mock
+    `call_from_thread` and `notify` directly on the instance.
     """
-    # Patch the lazy imports inside the worker
+    from unittest.mock import PropertyMock
+
+    from bagels.app import App
+
+    instance = App.__new__(App)
+    # Patch self.app to return instance itself (mimics real Textual behaviour)
     with (
+        patch.object(type(instance), "app", new_callable=PropertyMock) as mock_app_prop,
         patch("bagels.config.CONFIG", config_value),
         patch("bagels.git.operations.pull_from_remote", mock_pull),
         patch("bagels.importer.importer.run_full_import", mock_import),
     ):
-        # Import here to pick up the patched module
-        from bagels.app import App  # noqa: PLC0415
-
-        instance = App.__new__(App)
-        instance.app = MagicMock()
+        mock_app_prop.return_value = instance
         instance.notify = MagicMock()
-        # call_from_thread should execute the callback immediately in tests
-        instance.app.call_from_thread = lambda fn: fn()
-        # Call the unwrapped function directly
+        instance.call_from_thread = lambda fn: fn()
         App.run_startup_import.__wrapped__(instance)
 
 
@@ -67,18 +73,7 @@ def test_run_startup_import_calls_run_full_import():
     mock_pull = MagicMock()
     mock_import = MagicMock()
 
-    with (
-        patch("bagels.config.CONFIG", config),
-        patch("bagels.git.operations.pull_from_remote", mock_pull),
-        patch("bagels.importer.importer.run_full_import", mock_import),
-    ):
-        from bagels.app import App
-
-        instance = App.__new__(App)
-        instance.app = MagicMock()
-        instance.notify = MagicMock()
-        instance.app.call_from_thread = lambda fn: fn()
-        App.run_startup_import.__wrapped__(instance)
+    _invoke_worker(config, mock_pull, mock_import)
 
     mock_import.assert_called_once()
 
@@ -95,18 +90,7 @@ def test_run_startup_import_auto_pull_true_calls_pull():
     mock_pull = MagicMock(side_effect=lambda **kw: call_order.append("pull"))
     mock_import = MagicMock(side_effect=lambda: call_order.append("import"))
 
-    with (
-        patch("bagels.config.CONFIG", config),
-        patch("bagels.git.operations.pull_from_remote", mock_pull),
-        patch("bagels.importer.importer.run_full_import", mock_import),
-    ):
-        from bagels.app import App
-
-        instance = App.__new__(App)
-        instance.app = MagicMock()
-        instance.notify = MagicMock()
-        instance.app.call_from_thread = lambda fn: fn()
-        App.run_startup_import.__wrapped__(instance)
+    _invoke_worker(config, mock_pull, mock_import)
 
     mock_pull.assert_called_once()
     mock_import.assert_called_once()
@@ -124,18 +108,7 @@ def test_run_startup_import_auto_pull_false_skips_pull():
     mock_pull = MagicMock()
     mock_import = MagicMock()
 
-    with (
-        patch("bagels.config.CONFIG", config),
-        patch("bagels.git.operations.pull_from_remote", mock_pull),
-        patch("bagels.importer.importer.run_full_import", mock_import),
-    ):
-        from bagels.app import App
-
-        instance = App.__new__(App)
-        instance.app = MagicMock()
-        instance.notify = MagicMock()
-        instance.app.call_from_thread = lambda fn: fn()
-        App.run_startup_import.__wrapped__(instance)
+    _invoke_worker(config, mock_pull, mock_import)
 
     mock_pull.assert_not_called()
     mock_import.assert_called_once()
@@ -152,18 +125,7 @@ def test_run_startup_import_git_disabled_skips_pull():
     mock_pull = MagicMock()
     mock_import = MagicMock()
 
-    with (
-        patch("bagels.config.CONFIG", config),
-        patch("bagels.git.operations.pull_from_remote", mock_pull),
-        patch("bagels.importer.importer.run_full_import", mock_import),
-    ):
-        from bagels.app import App
-
-        instance = App.__new__(App)
-        instance.app = MagicMock()
-        instance.notify = MagicMock()
-        instance.app.call_from_thread = lambda fn: fn()
-        App.run_startup_import.__wrapped__(instance)
+    _invoke_worker(config, mock_pull, mock_import)
 
     mock_pull.assert_not_called()
     mock_import.assert_called_once()
@@ -180,18 +142,7 @@ def test_run_startup_import_pull_failure_does_not_block_import():
     mock_pull = MagicMock(side_effect=Exception("network unreachable"))
     mock_import = MagicMock()
 
-    with (
-        patch("bagels.config.CONFIG", config),
-        patch("bagels.git.operations.pull_from_remote", mock_pull),
-        patch("bagels.importer.importer.run_full_import", mock_import),
-    ):
-        from bagels.app import App
-
-        instance = App.__new__(App)
-        instance.app = MagicMock()
-        instance.notify = MagicMock()
-        instance.app.call_from_thread = lambda fn: fn()
-        App.run_startup_import.__wrapped__(instance)
+    _invoke_worker(config, mock_pull, mock_import)
 
     mock_import.assert_called_once()
 
@@ -207,22 +158,10 @@ def test_run_startup_import_import_failure_is_swallowed():
     mock_pull = MagicMock()
     mock_import = MagicMock(side_effect=Exception("db locked"))
 
-    with (
-        patch("bagels.config.CONFIG", config),
-        patch("bagels.git.operations.pull_from_remote", mock_pull),
-        patch("bagels.importer.importer.run_full_import", mock_import),
-    ):
-        from bagels.app import App
-
-        instance = App.__new__(App)
-        instance.app = MagicMock()
-        instance.notify = MagicMock()
-        instance.app.call_from_thread = lambda fn: fn()
-        # Must not raise
-        try:
-            App.run_startup_import.__wrapped__(instance)
-        except Exception as exc:
-            raise AssertionError(f"Exception leaked out of worker: {exc}") from exc
+    try:
+        _invoke_worker(config, mock_pull, mock_import)
+    except Exception as exc:
+        raise AssertionError(f"Exception leaked out of worker: {exc}") from exc
 
 
 # ---------------------------------------------------------------------------
@@ -253,19 +192,9 @@ def test_run_startup_import_none_config_returns_early():
     """DATA-08: CONFIG=None in test environments — worker returns without error."""
     mock_import = MagicMock()
 
-    with (
-        patch("bagels.config.CONFIG", None),
-        patch("bagels.importer.importer.run_full_import", mock_import),
-    ):
-        from bagels.app import App
-
-        instance = App.__new__(App)
-        instance.app = MagicMock()
-        instance.notify = MagicMock()
-        instance.app.call_from_thread = lambda fn: fn()
-        try:
-            App.run_startup_import.__wrapped__(instance)
-        except Exception as exc:
-            raise AssertionError(f"Exception with CONFIG=None: {exc}") from exc
+    try:
+        _invoke_worker(None, MagicMock(), mock_import)
+    except Exception as exc:
+        raise AssertionError(f"Exception with CONFIG=None: {exc}") from exc
 
     mock_import.assert_not_called()
