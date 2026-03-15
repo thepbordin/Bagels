@@ -130,6 +130,9 @@ from bagels.cli.summary import summary
 from bagels.cli.accounts import accounts
 from bagels.cli.categories import categories
 from bagels.cli.spending import spending
+from bagels.cli.trends import trends
+from bagels.cli.llm import llm
+from bagels.cli.schema import schema
 
 cli.add_command(export_command, name="export")
 cli.add_command(import_command, name="import")
@@ -139,6 +142,9 @@ cli.add_command(summary, name="summary")
 cli.add_command(accounts, name="accounts")
 cli.add_command(categories, name="categories")
 cli.add_command(spending, name="spending")
+cli.add_command(trends, name="trends")
+cli.add_command(llm, name="llm")
+cli.add_command(schema, name="schema")
 
 
 if __name__ == "__main__":
