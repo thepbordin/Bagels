@@ -14,18 +14,18 @@
 - [x] **DATA-05**: Export records grouped by month to YAML format (`data/records/YYYY-MM.yaml`)
 - [x] **DATA-06**: Import YAML files back into SQLite database
 - [x] **DATA-07**: Auto-export YAML on every record save/update/delete
-- [ ] **DATA-08**: Auto-import YAML on application startup
+- [x] **DATA-08**: Auto-import YAML on application startup
 
 ### Git Sync
 
 - [ ] **GIT-01**: Initialize data directory as Git repository (`bagels git init`)
 - [x] **GIT-02**: Auto-commit YAML changes with descriptive messages
-- [ ] **GIT-03**: Support `bagels git sync` command (commit + push)
-- [ ] **GIT-04**: Support `bagels git pull` command (pull + reimport)
-- [ ] **GIT-05**: Support `bagels git status` command (show uncommitted changes)
-- [ ] **GIT-06**: Support `bagels git log` command (show recent history)
+- [x] **GIT-03**: Support `bagels git sync` command (commit + push)
+- [x] **GIT-04**: Support `bagels git pull` command (pull + reimport)
+- [x] **GIT-05**: Support `bagels git status` command (show uncommitted changes)
+- [x] **GIT-06**: Support `bagels git log` command (show recent history)
 - [x] **GIT-07**: Optional auto-push to remote (configurable)
-- [ ] **GIT-08**: Pull remote changes on startup and import YAML
+- [x] **GIT-08**: Pull remote changes on startup and import YAML
 
 ### CLI Query Interface
 
@@ -131,15 +131,15 @@
 | DATA-05 | Phase 1 | Complete |
 | DATA-06 | Phase 1 | Complete |
 | DATA-07 | Phase 3 | Complete |
-| DATA-08 | Phase 3 | Pending |
+| DATA-08 | Phase 3 | Complete |
 | GIT-01 | Phase 1 | Pending |
 | GIT-02 | Phase 3 | Complete |
-| GIT-03 | Phase 3 | Pending |
-| GIT-04 | Phase 3 | Pending |
-| GIT-05 | Phase 3 | Pending |
-| GIT-06 | Phase 3 | Pending |
+| GIT-03 | Phase 3 | Complete |
+| GIT-04 | Phase 3 | Complete |
+| GIT-05 | Phase 3 | Complete |
+| GIT-06 | Phase 3 | Complete |
 | GIT-07 | Phase 3 | Complete |
-| GIT-08 | Phase 3 | Pending |
+| GIT-08 | Phase 3 | Complete |
 | CLI-01 | Phase 2 | Complete |
 | CLI-02 | Phase 2 | Complete |
 | CLI-03 | Phase 2 | Complete |

@@ -4,12 +4,12 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 3
 status: executing
-last_updated: "2026-03-15T20:34:24.632Z"
+last_updated: "2026-03-15T20:45:14.203Z"
 progress:
   total_phases: 4
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 18
-  completed_plans: 17
+  completed_plans: 18
 ---
 
 # State: Bagels v1
@@ -36,9 +36,9 @@ Transform Bagels from a binary SQLite database into a Git-trackable, LLM-accessi
 ## Current Position
 
 **Phase:** 3 - Automation
-**Plan:** 03-03 complete, continuing with 03-04
-**Status:** In progress
-**Progress Bar:** [█████████░] 94% (17/18 plans)
+**Plan:** 03-04 complete — Phase 3 COMPLETE
+**Status:** Phase 3 complete
+**Progress Bar:** [██████████] 100% (18/18 plans)
 
 ### Phase 2 Status
 
@@ -93,6 +93,7 @@ Transform Bagels from a binary SQLite database into a Git-trackable, LLM-accessi
 | Phase 03-automation P01 | 4min | 2 tasks | 5 files |
 | Phase 03-automation P02 | 16 | 2 tasks | 7 files |
 | Phase 03-automation P03 | 2 | 2 tasks | 3 files |
+| Phase 03-automation P04 | 13 | 2 tasks | 3 files |
 
 ### Technical Context
 
@@ -146,14 +147,20 @@ None identified
 
 ### Last Session
 **Date:** 2026-03-16
-**Activity:** Phase 3 execution - Plan 03-03
-**Outcome:** 03-03 complete: `bagels git` Click group with status/log/sync/pull subcommands. `pull` uses safe export→commit→pull→reimport sequence. Registered in `__main__.py`. 10/10 tests passing.
+**Activity:** Phase 3 execution - Plan 03-04
+**Outcome:** 03-04 complete: run_full_import() in importer.py + @work(thread=True, exclusive=True) run_startup_import() in app.py. Non-blocking startup sync with optional git pull. 8/8 tests passing.
 
 ### Next Steps
-- **03-04**: Startup YAML import and auto-pull on boot
+- **Phase 4**: Final integration, verification, and release
 
 ### Context Handoff
-Phase 3 automation underway. `bagels git` CLI group complete: status (show dirty files), log (commit history), sync (commit all dirty + push), pull (export safety snapshot → pull → reimport). `_run_full_import()` helper in git.py reuses the import command sequence for the pull reimport step. Lazy imports in all command bodies prevent circular import issues.
+Phase 3 automation COMPLETE. All 4 plans delivered:
+- 03-01: GitConfig model + git/operations.py
+- 03-02: CRUD export hooks in all 5 managers
+- 03-03: `bagels git` CLI command group
+- 03-04: Startup YAML import worker (DATA-08, GIT-08)
+
+Full bidirectional sync is live: TUI CRUD → daemon export threads → YAML → auto-commit. On startup: optional git pull → run_full_import() → YAML → SQLite. Data never stays stale.
 
 ---
 *State initialized: 2026-03-14*
