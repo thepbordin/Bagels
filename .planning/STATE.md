@@ -4,12 +4,12 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 2
 status: planning
-last_updated: "2026-03-15T15:39:21.534Z"
+last_updated: "2026-03-15T15:43:57.899Z"
 progress:
   total_phases: 4
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 14
-  completed_plans: 12
+  completed_plans: 14
 ---
 
 # State: Bagels v1
@@ -85,6 +85,8 @@ Transform Bagels from a binary SQLite database into a Git-trackable, LLM-accessi
 | Phase 02 P02b | 367 | 2 tasks | 2 files |
 | Phase 02 P03 | 3600 | 5 tasks | 8 files |
 | Phase 02-cli-query-layer P01 | 5min | 4 tasks | 5 files |
+| Phase 02-cli-query-layer P04 | 30 | 5 tasks | 5 files |
+| Phase 02-cli-query-layer P05 | 3 min | 6 tasks | 9 files |
 
 ### Technical Context
 

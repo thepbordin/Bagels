@@ -33,20 +33,20 @@
 - [x] **CLI-02**: `bagels query records --category` with date range filtering
 - [x] **CLI-03**: `bagels query summary --month` command for financial overview
 - [x] **CLI-04**: `bagels query accounts --format yaml` command
-- [ ] **CLI-05**: `bagels query categories --tree` command
-- [ ] **CLI-06**: `bagels query spending --by-category --month` command
-- [ ] **CLI-07**: `bagels query spending --by-day --month` command
-- [ ] **CLI-08**: `bagels query trends --months` command with category filter
+- [x] **CLI-05**: `bagels query categories --tree` command
+- [x] **CLI-06**: `bagels query spending --by-category --month` command
+- [x] **CLI-07**: `bagels query spending --by-day --month` command
+- [x] **CLI-08**: `bagels query trends --months` command with category filter
 - [x] **CLI-09**: Support JSON output format for all query commands
 - [x] **CLI-10**: `bagels add record --from-yaml` command for batch import
 
 ### LLM Integration
 
-- [ ] **LLM-01**: `bagels context --month` command dumps financial snapshot
-- [ ] **LLM-02**: `bagels schema` command prints full data schema
-- [ ] **LLM-03**: `bagels schema records` command prints record schema
-- [ ] **LLM-04**: Context output includes accounts, summary, spending by category, recent records
-- [ ] **LLM-05**: Context output includes budget status with progress bars
+- [x] **LLM-01**: `bagels context --month` command dumps financial snapshot
+- [x] **LLM-02**: `bagels schema` command prints full data schema
+- [x] **LLM-03**: `bagels schema records` command prints record schema
+- [x] **LLM-04**: Context output includes accounts, summary, spending by category, recent records
+- [x] **LLM-05**: Context output includes budget status with progress bars
 
 ### Data Format
 
@@ -144,17 +144,17 @@
 | CLI-02 | Phase 2 | Complete |
 | CLI-03 | Phase 2 | Complete |
 | CLI-04 | Phase 2 | Complete |
-| CLI-05 | Phase 2 | Pending |
-| CLI-06 | Phase 2 | Pending |
-| CLI-07 | Phase 2 | Pending |
-| CLI-08 | Phase 2 | Pending |
+| CLI-05 | Phase 2 | Complete |
+| CLI-06 | Phase 2 | Complete |
+| CLI-07 | Phase 2 | Complete |
+| CLI-08 | Phase 2 | Complete |
 | CLI-09 | Phase 2 | Complete |
 | CLI-10 | Phase 2 | Complete |
-| LLM-01 | Phase 2 | Pending |
-| LLM-02 | Phase 2 | Pending |
-| LLM-03 | Phase 2 | Pending |
-| LLM-04 | Phase 2 | Pending |
-| LLM-05 | Phase 2 | Pending |
+| LLM-01 | Phase 2 | Complete |
+| LLM-02 | Phase 2 | Complete |
+| LLM-03 | Phase 2 | Complete |
+| LLM-04 | Phase 2 | Complete |
+| LLM-05 | Phase 2 | Complete |
 | FMT-01 | Phase 1 | Complete |
 | FMT-02 | Phase 1 | Complete |
 | FMT-03 | Phase 1 | Complete |
