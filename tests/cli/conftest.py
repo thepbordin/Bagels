@@ -1,11 +1,8 @@
 """
-Shared test fixtures for CLI command testing.
+Shared test fixtures for CLI testing.
 
-Provides pytest fixtures for:
-- Click CliRunner for CLI command invocation
-- Sample database with comprehensive test data
-- Quick access fixtures for accounts, categories, records
-- Session fixture for CLI test queries
+Provides CliRunner, sample database with records, and quick access fixtures
+for testing CLI query commands.
 """
 
 import pytest
@@ -14,543 +11,153 @@ from datetime import datetime, timedelta
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-# Initialize config BEFORE importing models
-from bagels.config import Config, config_file
-import bagels.config as config_module
-import yaml
-import warnings
-
-# Create config file if needed
-if not config_file().exists():
-    config_file().parent.mkdir(parents=True, exist_ok=True)
-    with open(config_file(), "w") as f:
-        yaml.dump(Config.get_default().model_dump(), f)
-
-# Load config
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore")
-    config_module.CONFIG = Config()
-
-# Now import models
-from bagels.models.database.db import Base
 from bagels.models.account import Account
 from bagels.models.category import Category
 from bagels.models.record import Record
-from bagels.models.split import Split
+from bagels.models.person import Person
+from bagels.models.database.db import Base
 
 
-# ---------- CLI Runner Fixture ---------- #
-
-
-@pytest.fixture(scope="function")
+@pytest.fixture
 def cli_runner():
-    """
-    Provide Click CliRunner for CLI command testing.
-
-    Returns:
-        CliRunner: Click testing utility for invoking CLI commands
-    """
+    """Click CliRunner instance for invoking commands."""
     return CliRunner()
 
 
-# ---------- Sample Database with Records ---------- #
+@pytest.fixture
+def in_memory_db():
+    """Create in-memory SQLite database for testing."""
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(engine)
+    return engine
 
 
-@pytest.fixture(scope="function")
-def sample_db_with_records():
+@pytest.fixture
+def sample_db_with_records(in_memory_db):
     """
-    Create in-memory database with comprehensive test data.
+    In-memory database with test data for CLI testing.
 
     Creates:
-    - 5 sample accounts (Savings, Checking, Credit Card, Investment, Cash)
-    - 10 sample categories with hierarchy
-    - 30 sample records spanning 3 months (2026-01, 2026-02, 2026-03)
-    - Both income and expense records
-    - Records with splits
-
-    Returns:
-        Session: SQLAlchemy session with populated test data
+    - 3 sample accounts (Savings, Checking, Credit Card)
+    - 5 sample categories (Food, Transport, Entertainment nested hierarchically)
+    - 20-30 sample records spanning 2-3 months
     """
-    # Create in-memory SQLite engine
-    engine = create_engine("sqlite:///:memory:")
-
-    # Create all tables
-    Base.metadata.create_all(engine)
-
-    # Create session
-    Session = sessionmaker(bind=engine)
+    Session = sessionmaker(bind=in_memory_db)
     session = Session()
 
-    # Create sample accounts
-    accounts = [
-        Account(
-            name="Savings",
-            description="Emergency fund and savings",
-            beginningBalance=5000.0,
-            repaymentDate=None,
-            hidden=False,
-        ),
-        Account(
-            name="Checking",
-            description="Primary checking account",
-            beginningBalance=2000.0,
-            repaymentDate=None,
-            hidden=False,
-        ),
-        Account(
-            name="Credit Card",
-            description="Visa credit card",
-            beginningBalance=-1500.0,
-            repaymentDate=None,
-            hidden=False,
-        ),
-        Account(
-            name="Investment",
-            description="Stock portfolio",
-            beginningBalance=10000.0,
-            repaymentDate=None,
-            hidden=False,
-        ),
-        Account(
-            name="Cash",
-            description="Physical cash on hand",
-            beginningBalance=200.0,
-            repaymentDate=None,
-            hidden=False,
-        ),
-    ]
+    # Create accounts
+    savings = Account(
+        name="Savings", accountType="asset", beginningBalance=5000.0, color="#00FF00"
+    )
+    checking = Account(
+        name="Checking", accountType="asset", beginningBalance=2000.0, color="#0000FF"
+    )
+    credit_card = Account(
+        name="Credit Card",
+        accountType="liability",
+        beginningBalance=-500.0,
+        color="#FF0000",
+    )
+    session.add_all([savings, checking, credit_card])
+    session.commit()
 
-    for account in accounts:
-        session.add(account)
+    # Create categories (hierarchical)
+    food = Category(name="Food", nature="Need", color="#FF6B6B")
+    groceries = Category(
+        name="Groceries", nature="Need", color="#FF6B6B", parentId=food.id
+    )
+    restaurants = Category(
+        name="Restaurants", nature="Want", color="#FF6B6B", parentId=food.id
+    )
+    transport = Category(name="Transport", nature="Need", color="#4ECDC4")
+    entertainment = Category(name="Entertainment", nature="Want", color="#95E1D3")
+    session.add_all([food, groceries, restaurants, transport, entertainment])
+    session.commit()
+
+    # Refresh to get IDs
     session.flush()
+    session.refresh(groceries)
+    session.refresh(restaurants)
 
-    # Create sample categories with hierarchy
-    from bagels.models.category import Nature
-
-    categories = [
-        # Top level categories
-        Category(
-            name="Food", parentCategoryId=None, nature=Nature.NEED, color="#FF5733"
-        ),
-        Category(
-            name="Transport", parentCategoryId=None, nature=Nature.NEED, color="#33FF57"
-        ),
-        Category(
-            name="Housing", parentCategoryId=None, nature=Nature.NEED, color="#3357FF"
-        ),
-        Category(
-            name="Entertainment",
-            parentCategoryId=None,
-            nature=Nature.WANT,
-            color="#F033FF",
-        ),
-        Category(
-            name="Healthcare",
-            parentCategoryId=None,
-            nature=Nature.NEED,
-            color="#FF33F0",
-        ),
-    ]
-
-    for category in categories:
-        session.add(category)
-    session.flush()
-
-    # Create subcategories
-    food_groceries = Category(
-        name="Groceries",
-        parentCategoryId=categories[0].id,
-        nature=Nature.NEED,
-        color="#FF5733",
+    # Create records spanning 3 months
+    base_date = datetime.now().replace(
+        day=1, hour=12, minute=0, second=0, microsecond=0
     )
-    food_restaurants = Category(
-        name="Restaurants",
-        parentCategoryId=categories[0].id,
-        nature=Nature.WANT,
-        color="#FF8C33",
-    )
-    transport_gas = Category(
-        name="Gas",
-        parentCategoryId=categories[1].id,
-        nature=Nature.NEED,
-        color="#33FF57",
-    )
-    transport_public = Category(
-        name="Public Transit",
-        parentCategoryId=categories[1].id,
-        nature=Nature.NEED,
-        color="#57FF33",
-    )
-    entertainment_movies = Category(
-        name="Movies",
-        parentCategoryId=categories[3].id,
-        nature=Nature.WANT,
-        color="#F033FF",
-    )
-    entertainment_games = Category(
-        name="Games",
-        parentCategoryId=categories[3].id,
-        nature=Nature.WANT,
-        color="#FF33A8",
-    )
-
-    subcategories = [
-        food_groceries,
-        food_restaurants,
-        transport_gas,
-        transport_public,
-        entertainment_movies,
-        entertainment_games,
-    ]
-
-    for category in subcategories:
-        session.add(category)
-    session.flush()
-
-    # Create sample records spanning 3 months
-    base_dates = [
-        datetime(2026, 1, 15),  # January
-        datetime(2026, 2, 15),  # February
-        datetime(2026, 3, 15),  # March
-    ]
-
-    records_data = [
-        # January records
-        {
-            "label": "Grocery Shopping",
-            "amount": 150.50,
-            "category": food_groceries.id,
-            "account": accounts[1].id,
-            "date": base_dates[0],
-            "is_income": False,
-        },
-        {
-            "label": "Gas Station",
-            "amount": 45.00,
-            "category": transport_gas.id,
-            "account": accounts[2].id,
-            "date": base_dates[0] + timedelta(days=2),
-            "is_income": False,
-        },
-        {
-            "label": "Rent Payment",
-            "amount": 1500.00,
-            "category": categories[2].id,
-            "account": accounts[1].id,
-            "date": base_dates[0] + timedelta(days=5),
-            "is_income": False,
-        },
-        {
-            "label": "Salary",
-            "amount": 3500.00,
-            "category": None,
-            "account": accounts[1].id,
-            "date": base_dates[0] + timedelta(days=7),
-            "is_income": True,
-        },
-        {
-            "label": "Restaurant Dinner",
-            "amount": 65.00,
-            "category": food_restaurants.id,
-            "account": accounts[2].id,
-            "date": base_dates[0] + timedelta(days=10),
-            "is_income": False,
-        },
-        {
-            "label": "Movie Tickets",
-            "amount": 25.00,
-            "category": entertainment_movies.id,
-            "account": accounts[1].id,
-            "date": base_dates[0] + timedelta(days=12),
-            "is_income": False,
-        },
-        {
-            "label": "Public Transit Pass",
-            "amount": 80.00,
-            "category": transport_public.id,
-            "account": accounts[1].id,
-            "date": base_dates[0] + timedelta(days=15),
-            "is_income": False,
-        },
-        {
-            "label": "Doctor Visit",
-            "amount": 120.00,
-            "category": categories[4].id,
-            "account": accounts[1].id,
-            "date": base_dates[0] + timedelta(days=18),
-            "is_income": False,
-        },
-        {
-            "label": "Groceries",
-            "amount": 180.25,
-            "category": food_groceries.id,
-            "account": accounts[1].id,
-            "date": base_dates[0] + timedelta(days=20),
-            "is_income": False,
-        },
-        {
-            "label": "Gas",
-            "amount": 42.50,
-            "category": transport_gas.id,
-            "account": accounts[2].id,
-            "date": base_dates[0] + timedelta(days=22),
-            "is_income": False,
-        },
-        # February records
-        {
-            "label": "Grocery Shopping",
-            "amount": 165.00,
-            "category": food_groceries.id,
-            "account": accounts[1].id,
-            "date": base_dates[1],
-            "is_income": False,
-        },
-        {
-            "label": "Gas Station",
-            "amount": 38.75,
-            "category": transport_gas.id,
-            "account": accounts[2].id,
-            "date": base_dates[1] + timedelta(days=2),
-            "is_income": False,
-        },
-        {
-            "label": "Rent Payment",
-            "amount": 1500.00,
-            "category": categories[2].id,
-            "account": accounts[1].id,
-            "date": base_dates[1] + timedelta(days=5),
-            "is_income": False,
-        },
-        {
-            "label": "Salary",
-            "amount": 3500.00,
-            "category": None,
-            "account": accounts[1].id,
-            "date": base_dates[1] + timedelta(days=7),
-            "is_income": True,
-        },
-        {
-            "label": "Restaurant Lunch",
-            "amount": 35.50,
-            "category": food_restaurants.id,
-            "account": accounts[2].id,
-            "date": base_dates[1] + timedelta(days=10),
-            "is_income": False,
-        },
-        {
-            "label": "Video Game",
-            "amount": 59.99,
-            "category": entertainment_games.id,
-            "account": accounts[2].id,
-            "date": base_dates[1] + timedelta(days=12),
-            "is_income": False,
-        },
-        {
-            "label": "Public Transit Pass",
-            "amount": 80.00,
-            "category": transport_public.id,
-            "account": accounts[1].id,
-            "date": base_dates[1] + timedelta(days=15),
-            "is_income": False,
-        },
-        {
-            "label": "Pharmacy",
-            "amount": 45.00,
-            "category": categories[4].id,
-            "account": accounts[1].id,
-            "date": base_dates[1] + timedelta(days=18),
-            "is_income": False,
-        },
-        {
-            "label": "Groceries",
-            "amount": 175.50,
-            "category": food_groceries.id,
-            "account": accounts[1].id,
-            "date": base_dates[1] + timedelta(days=20),
-            "is_income": False,
-        },
-        {
-            "label": "Gas",
-            "amount": 40.00,
-            "category": transport_gas.id,
-            "account": accounts[2].id,
-            "date": base_dates[1] + timedelta(days=22),
-            "is_income": False,
-        },
-        # March records
-        {
-            "label": "Grocery Shopping",
-            "amount": 155.75,
-            "category": food_groceries.id,
-            "account": accounts[1].id,
-            "date": base_dates[2],
-            "is_income": False,
-        },
-        {
-            "label": "Gas Station",
-            "amount": 48.25,
-            "category": transport_gas.id,
-            "account": accounts[2].id,
-            "date": base_dates[2] + timedelta(days=2),
-            "is_income": False,
-        },
-        {
-            "label": "Rent Payment",
-            "amount": 1500.00,
-            "category": categories[2].id,
-            "account": accounts[1].id,
-            "date": base_dates[2] + timedelta(days=5),
-            "is_income": False,
-        },
-        {
-            "label": "Salary",
-            "amount": 3500.00,
-            "category": None,
-            "account": accounts[1].id,
-            "date": base_dates[2] + timedelta(days=7),
-            "is_income": True,
-        },
-        {
-            "label": "Restaurant Dinner",
-            "amount": 72.00,
-            "category": food_restaurants.id,
-            "account": accounts[2].id,
-            "date": base_dates[2] + timedelta(days=10),
-            "is_income": False,
-        },
-        {
-            "label": "Movie Tickets",
-            "amount": 28.00,
-            "category": entertainment_movies.id,
-            "account": accounts[1].id,
-            "date": base_dates[2] + timedelta(days=12),
-            "is_income": False,
-        },
-        {
-            "label": "Public Transit Pass",
-            "amount": 80.00,
-            "category": transport_public.id,
-            "account": accounts[1].id,
-            "date": base_dates[2] + timedelta(days=15),
-            "is_income": False,
-        },
-        {
-            "label": "Dentist",
-            "amount": 150.00,
-            "category": categories[4].id,
-            "account": accounts[1].id,
-            "date": base_dates[2] + timedelta(days=18),
-            "is_income": False,
-        },
-        {
-            "label": "Groceries",
-            "amount": 190.00,
-            "category": food_groceries.id,
-            "account": accounts[1].id,
-            "date": base_dates[2] + timedelta(days=20),
-            "is_income": False,
-        },
-        {
-            "label": "Gas",
-            "amount": 44.50,
-            "category": transport_gas.id,
-            "account": accounts[2].id,
-            "date": base_dates[2] + timedelta(days=22),
-            "is_income": False,
-        },
-    ]
 
     records = []
-    for record_data in records_data:
-        record = Record(
-            label=record_data["label"],
-            amount=record_data["amount"],
-            date=record_data["date"],
-            accountId=record_data["account"],
-            categoryId=record_data["category"],
-            isIncome=record_data["is_income"],
-            isTransfer=False,
-        )
-        session.add(record)
-        records.append(record)
+    for month_offset in range(3):
+        for day in range(1, 28, 3):  # Every 3 days
+            record_date = base_date - timedelta(days=month_offset * 30 + (30 - day))
 
-    # Add some records with splits
-    record_with_split = Record(
-        label="Shopping with Split",
-        amount=200.00,
-        date=base_dates[2] + timedelta(days=1),
-        accountId=accounts[1].id,
-        categoryId=food_groceries.id,
-        isIncome=False,
-        isTransfer=False,
-    )
-    session.add(record_with_split)
-    session.flush()
+            # Alternate between different categories and accounts
+            if day % 9 == 1:
+                # Groceries
+                record = Record(
+                    label=f"Groceries - Day {day}",
+                    amount=50.0 + (day % 5) * 10,
+                    date=record_date,
+                    accountId=savings.id,
+                    categoryId=groceries.id,
+                    isIncome=False,
+                    isTransfer=False,
+                )
+            elif day % 9 == 4:
+                # Restaurants
+                record = Record(
+                    label=f"Restaurant - Day {day}",
+                    amount=30.0 + (day % 3) * 5,
+                    date=record_date,
+                    accountId=credit_card.id,
+                    categoryId=restaurants.id,
+                    isIncome=False,
+                    isTransfer=False,
+                )
+            elif day % 9 == 7:
+                # Transport
+                record = Record(
+                    label=f"Gas - Day {day}",
+                    amount=40.0 + (day % 4) * 5,
+                    date=record_date,
+                    accountId=checking.id,
+                    categoryId=transport.id,
+                    isIncome=False,
+                    isTransfer=False,
+                )
+            else:
+                # Entertainment
+                record = Record(
+                    label=f"Movie - Day {day}",
+                    amount=20.0 + (day % 2) * 10,
+                    date=record_date,
+                    accountId=credit_card.id,
+                    categoryId=entertainment.id,
+                    isIncome=False,
+                    isTransfer=False,
+                )
 
-    # Create splits for the record
-    split1 = Split(
-        recordId=record_with_split.id, categoryId=food_groceries.id, amount=150.00
-    )
-    split2 = Split(
-        recordId=record_with_split.id, categoryId=entertainment_games.id, amount=50.00
-    )
-    session.add(split1)
-    session.add(split2)
+            records.append(record)
 
+    session.add_all(records)
     session.commit()
 
     yield session
 
-    # Clean up
     session.close()
-    Base.metadata.drop_all(engine)
 
 
-# ---------- Sample Data Fixtures ---------- #
-
-
-@pytest.fixture(scope="function")
+@pytest.fixture
 def sample_accounts(sample_db_with_records):
-    """
-    Return list of Account objects from sample DB.
-
-    Returns:
-        list: List of 5 Account objects
-    """
+    """Quick access to list of Account objects."""
     return sample_db_with_records.query(Account).all()
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def sample_categories(sample_db_with_records):
-    """
-    Return list of Category objects from sample DB.
-
-    Returns:
-        list: List of Category objects (16 total: 5 top level + 6 subcategories)
-    """
+    """Quick access to list of Category objects."""
     return sample_db_with_records.query(Category).all()
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def sample_records(sample_db_with_records):
-    """
-    Return list of Record objects from sample DB.
-
-    Returns:
-        list: List of Record objects (31 total)
-    """
+    """Quick access to list of Record objects."""
     return sample_db_with_records.query(Record).all()
-
-
-# ---------- Session Fixture ---------- #
-
-
-@pytest.fixture(scope="function")
-def cli_session(sample_db_with_records):
-    """
-    Provide session for CLI test queries.
-
-    Returns:
-        Session: SQLAlchemy session from sample_db_with_records
-    """
-    return sample_db_with_records
