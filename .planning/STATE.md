@@ -4,12 +4,12 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 3
 status: executing
-last_updated: "2026-03-15T20:29:47.890Z"
+last_updated: "2026-03-15T20:34:24.632Z"
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 18
-  completed_plans: 16
+  completed_plans: 17
 ---
 
 # State: Bagels v1
@@ -36,9 +36,9 @@ Transform Bagels from a binary SQLite database into a Git-trackable, LLM-accessi
 ## Current Position
 
 **Phase:** 3 - Automation
-**Plan:** 03-02 complete, continuing with 03-03
+**Plan:** 03-03 complete, continuing with 03-04
 **Status:** In progress
-**Progress Bar:** [█████████░] 89% (16/18 plans)
+**Progress Bar:** [█████████░] 94% (17/18 plans)
 
 ### Phase 2 Status
 
@@ -92,6 +92,7 @@ Transform Bagels from a binary SQLite database into a Git-trackable, LLM-accessi
 | Phase 02-cli-query-layer P05 | 3 min | 6 tasks | 9 files |
 | Phase 03-automation P01 | 4min | 2 tasks | 5 files |
 | Phase 03-automation P02 | 16 | 2 tasks | 7 files |
+| Phase 03-automation P03 | 2 | 2 tasks | 3 files |
 
 ### Technical Context
 
@@ -145,15 +146,14 @@ None identified
 
 ### Last Session
 **Date:** 2026-03-16
-**Activity:** Phase 3 execution - Plans 03-01 and 03-02
-**Outcome:** 03-01 complete: GitConfig Pydantic model + git/operations.py with auto_commit_yaml, push/pull/status/log. 03-02 complete: export_records_for_month() + daemon thread hooks in all 5 managers. 11/11 new tests passing.
+**Activity:** Phase 3 execution - Plan 03-03
+**Outcome:** 03-03 complete: `bagels git` Click group with status/log/sync/pull subcommands. `pull` uses safe export→commit→pull→reimport sequence. Registered in `__main__.py`. 10/10 tests passing.
 
 ### Next Steps
-- **03-03**: Git command CLI (`bagels git status/log/sync/pull`)
 - **03-04**: Startup YAML import and auto-pull on boot
 
 ### Context Handoff
-Phase 3 automation underway. GitConfig model validates and stores git settings. All 5 manager modules (records, accounts, categories, persons, record_templates) now fire background daemon threads on CRUD to export YAML. The hook chain: CRUD → daemon thread → export_*() → (if git.enabled+auto_commit) auto_commit_yaml(). All hooks swallow exceptions so CRUD is never blocked.
+Phase 3 automation underway. `bagels git` CLI group complete: status (show dirty files), log (commit history), sync (commit all dirty + push), pull (export safety snapshot → pull → reimport). `_run_full_import()` helper in git.py reuses the import command sequence for the pull reimport step. Lazy imports in all command bodies prevent circular import issues.
 
 ---
 *State initialized: 2026-03-14*
