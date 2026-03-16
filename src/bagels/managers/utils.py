@@ -5,7 +5,7 @@ from functools import lru_cache
 from sqlalchemy.orm import sessionmaker
 from textual.widget import Widget
 
-from bagels.config import CONFIG
+import bagels.config as config_mod
 from bagels.models.category import Category
 from bagels.models.database.app import db_engine
 from bagels.models.record import Record
@@ -56,7 +56,7 @@ def _get_start_end_of_week(offset: int = 0):
     now = datetime.now()
     # Apply offset in weeks
     now = now + timedelta(weeks=offset)
-    first_day_of_week = CONFIG.defaults.first_day_of_week
+    first_day_of_week = config_mod.CONFIG.defaults.first_day_of_week
     start_of_week = (
         now - timedelta(days=(now.weekday() - first_day_of_week) % 7)
     ).replace(hour=0, minute=0, second=0, microsecond=0)
@@ -164,7 +164,7 @@ def get_period_figures(
                 else:
                     total -= record_amount
 
-        return abs(round(total, CONFIG.defaults.round_decimals))
+        return abs(round(total, config_mod.CONFIG.defaults.round_decimals))
     finally:
         if should_close:
             session.close()
@@ -182,7 +182,7 @@ def _get_days_in_period(offset: int = 0, offset_type: str = "month"):
 
 def get_period_average(net: int = 0, offset: int = 0, offset_type: str = "month"):
     days = _get_days_in_period(offset, offset_type)
-    return round(net / days, CONFIG.defaults.round_decimals)
+    return round(net / days, config_mod.CONFIG.defaults.round_decimals)
 
 
 # region filter process
@@ -212,9 +212,11 @@ def get_operator_amount(operator_amount: str = None):
 
 
 def get_income_to_use(offset: int):
-    metric = CONFIG.state.budgeting.income_assess_metric  # use number if provided
-    threshold = CONFIG.state.budgeting.income_assess_threshold
-    fallback = CONFIG.state.budgeting.income_assess_fallback
+    metric = (
+        config_mod.CONFIG.state.budgeting.income_assess_metric
+    )  # use number if provided
+    threshold = config_mod.CONFIG.state.budgeting.income_assess_threshold
+    fallback = config_mod.CONFIG.state.budgeting.income_assess_fallback
 
     limit = 0
     if metric == "periodIncome":
