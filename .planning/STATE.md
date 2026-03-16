@@ -134,6 +134,7 @@ None identified
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 1 | Fix the ImportError for validateForm | 2026-03-14 | 114758c | [1-fix-the-importerror-for-validateform](./quick/1-fix-the-importerror-for-validateform/) |
+| 2 | Fix AttributeError CONFIG is None when --at flag used | 2026-03-17 | 1da59b5 | [2-fix-attributeerror-config-is-none-when-g](./quick/2-fix-attributeerror-config-is-none-when-g/) |
 
 ### Todos
 
