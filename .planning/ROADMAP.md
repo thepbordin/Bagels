@@ -121,7 +121,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Foundation | 0/6 | Planning complete | - |
 | 2. CLI Query Layer | 2/8 | In Progress|  |
-| 3. Automation | 4/4 | Complete   | 2026-03-15 |
+| 3. Automation | 4/4 | Complete    | 2026-03-15 |
 | 4. Verification | 0/5 | Not started | - |
 
 ## Coverage

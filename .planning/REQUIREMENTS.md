@@ -18,7 +18,7 @@
 
 ### Git Sync
 
-- [ ] **GIT-01**: Initialize data directory as Git repository (`bagels git init`)
+- [x] **GIT-01**: Initialize data directory as Git repository (`bagels git init`)
 - [x] **GIT-02**: Auto-commit YAML changes with descriptive messages
 - [x] **GIT-03**: Support `bagels git sync` command (commit + push)
 - [x] **GIT-04**: Support `bagels git pull` command (pull + reimport)
@@ -66,9 +66,9 @@
 
 ### CLI Commands
 
-- [ ] **CMD-01**: `bagels export` command for manual YAML export
-- [ ] **CMD-02**: `bagels import` command for manual YAML import
-- [ ] **CMD-03**: `bagels init` command initializes new data directory with Git repo
+- [x] **CMD-01**: `bagels export` command for manual YAML export
+- [x] **CMD-02**: `bagels import` command for manual YAML import
+- [x] **CMD-03**: `bagels init` command initializes new data directory with Git repo
 
 ### Testing
 
@@ -132,7 +132,7 @@
 | DATA-06 | Phase 1 | Complete |
 | DATA-07 | Phase 3 | Complete |
 | DATA-08 | Phase 3 | Complete |
-| GIT-01 | Phase 1 | Pending |
+| GIT-01 | Phase 1 | Complete |
 | GIT-02 | Phase 3 | Complete |
 | GIT-03 | Phase 3 | Complete |
 | GIT-04 | Phase 3 | Complete |
@@ -165,9 +165,9 @@
 | CFG-03 | Phase 3 | Complete |
 | CFG-04 | Phase 3 | Complete |
 | CFG-05 | Phase 3 | Complete |
-| CMD-01 | Phase 1 | Pending |
-| CMD-02 | Phase 1 | Pending |
-| CMD-03 | Phase 1 | Pending |
+| CMD-01 | Phase 1 | Complete |
+| CMD-02 | Phase 1 | Complete |
+| CMD-03 | Phase 1 | Complete |
 | TEST-01 | Phase 4 | Pending |
 | TEST-02 | Phase 4 | Pending |
 | TEST-03 | Phase 4 | Pending |
