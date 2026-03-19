@@ -9,34 +9,45 @@ import pytest
 from click.testing import CliRunner
 from datetime import datetime, timedelta
 from pathlib import Path
-from tempfile import TemporaryDirectory
+import warnings
+import yaml
+import tempfile
+import shutil
+import uuid
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
-# Initialize config BEFORE importing models
+# Import locations module for custom root management
+from bagels.locations import set_custom_root, database_file
+
+# Import config module (will use temp directory when set_custom_root is called)
 from bagels.config import Config, config_file
 import bagels.config as config_module
-import yaml
-import warnings
 
-# Create config file if needed
-if not config_file().exists():
-    config_file().parent.mkdir(parents=True, exist_ok=True)
-    with open(config_file(), "w") as f:
-        yaml.dump(Config.get_default().model_dump(), f)
-
-# Load config
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore")
-    config_module.CONFIG = Config()
-
+# Import models
+from bagels.models.database.db import Base
 from bagels.models.account import Account
 from bagels.models.category import Category
 from bagels.models.record import Record
 from bagels.models.person import Person
-from bagels.models.database.app import init_db, Session
-from bagels.locations import set_custom_root
 
 # Import all models to ensure relationships are properly configured
-from bagels.models import split
+from bagels.models import split  # noqa: F401
+
+
+def _create_config_in_dir(tmpdir: str) -> None:
+    """Create config file in the given directory."""
+    config_path = Path(tmpdir) / "config" / "config.yaml"
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(config_path, "w") as f:
+        yaml.dump(Config.get_default().model_dump(), f)
+
+
+def _load_config() -> None:
+    """Load config from the current custom root."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        config_module.CONFIG = Config()
 
 
 @pytest.fixture
@@ -50,6 +61,9 @@ def sample_db_with_records():
     """
     Temporary file-based database with test data for CLI testing.
 
+    Each test using this fixture gets its OWN isolated temp directory and database.
+    No sharing between tests - prevents UNIQUE constraint failures.
+
     Creates:
     - 3 sample accounts (Savings, Checking, Credit Card)
     - 5 sample categories (Food, Transport, Entertainment nested hierarchically)
@@ -57,15 +71,31 @@ def sample_db_with_records():
 
     Uses a temporary directory to ensure CLI commands use test database.
     """
-    with TemporaryDirectory() as tmpdir:
-        # Set custom root to temporary directory
-        set_custom_root(tmpdir)
+    # Create a unique temp directory for this test
+    tmpdir = tempfile.mkdtemp(prefix=f"bagels_cli_test_{uuid.uuid4().hex}_")
 
-        # Initialize database in temp directory
-        init_db()
+    # Set custom root at the START of the fixture
+    set_custom_root(tmpdir)
 
-        # Create session
-        session = Session()
+    # Create config file AFTER setting custom root
+    _create_config_in_dir(tmpdir)
+
+    # Load config
+    _load_config()
+
+    # Create a NEW engine and session for this test's database
+    # This is critical because the global db_engine is created at import time
+    # and points to whatever database_file() returned then
+    db_path = database_file()
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    test_engine = create_engine(f"sqlite:///{db_path.resolve()}")
+    TestSession = sessionmaker(bind=test_engine)
+
+    # Create all tables
+    Base.metadata.create_all(test_engine)
+
+    # Create session
+    session = TestSession()
 
     # Create accounts
     savings = Account(name="Savings", slug="savings", beginningBalance=5000.0)
@@ -176,7 +206,13 @@ def sample_db_with_records():
 
     # Cleanup
     session.close()
-    set_custom_root(None)  # Reset custom root
+
+    # Dispose of the engine to release file handles
+    test_engine.dispose()
+
+    # Remove the temp directory explicitly
+    if Path(tmpdir).exists():
+        shutil.rmtree(tmpdir, ignore_errors=True)
 
 
 @pytest.fixture
