@@ -17,6 +17,54 @@ from sqlalchemy.orm import Session
 
 from bagels.importer.validator import ValidationError, validate_yaml
 
+CONFLICT_MARKER = "<<<<<<< HEAD"
+
+
+class ConflictError(Exception):
+    """Raised when YAML files contain unresolved git conflict markers."""
+
+    def __init__(self, conflicting_files: list[str]):
+        self.conflicting_files = conflicting_files
+        files_str = ", ".join(conflicting_files)
+        super().__init__(
+            f"Git conflict markers detected in: {files_str}. "
+            "Resolve conflicts manually and re-run import."
+        )
+
+
+def check_for_conflict_markers(data_dir: Path) -> list[str]:
+    """Scan all YAML files in data_dir for git conflict markers.
+
+    Args:
+        data_dir: Directory containing YAML files (accounts.yaml, records/*.yaml, etc.)
+
+    Returns:
+        List of relative file path strings that contain conflict markers.
+        Empty list if no conflicts found.
+    """
+    conflicting: list[str] = []
+    yaml_files: list[Path] = []
+
+    # Collect all YAML files
+    for name in ("accounts.yaml", "categories.yaml", "persons.yaml", "templates.yaml"):
+        f = data_dir / name
+        if f.exists():
+            yaml_files.append(f)
+
+    records_dir = data_dir / "records"
+    if records_dir.is_dir():
+        yaml_files.extend(sorted(records_dir.glob("*.yaml")))
+
+    for yaml_file in yaml_files:
+        try:
+            content = yaml_file.read_text(encoding="utf-8")
+            if CONFLICT_MARKER in content:
+                conflicting.append(str(yaml_file.relative_to(data_dir)))
+        except OSError:
+            pass
+
+    return conflicting
+
 
 def create_backup() -> Path:
     """
@@ -438,6 +486,12 @@ def run_full_import() -> None:
     from bagels.models.database.app import db_engine
 
     data_dir = data_directory()
+
+    # Check for git conflict markers before importing anything
+    conflicting = check_for_conflict_markers(data_dir)
+    if conflicting:
+        raise ConflictError(conflicting)
+
     _Session = sessionmaker(bind=db_engine)
     session = _Session()
 
