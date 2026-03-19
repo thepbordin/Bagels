@@ -177,8 +177,12 @@ class RecordTableBuilder:
             amount_string = record.amount
             account_string = "-"
         else:
-            color_tag = record.category.color.lower()
-            category_string = f"[{color_tag}]{CONFIG.symbols.category_color}[/{color_tag}] {record.category.name}"
+            if record.category is not None:
+                color_tag = record.category.color.lower()
+                category_string = f"[{color_tag}]{CONFIG.symbols.category_color}[/{color_tag}] {record.category.name}"
+            else:
+                color_tag = "grey"
+                category_string = f"[{color_tag}]{CONFIG.symbols.category_color}[/{color_tag}] No Category"
 
             if record.splits and not self.show_splits:
                 amount_self = round(
@@ -198,7 +202,7 @@ class RecordTableBuilder:
         table.add_row("//", string, "", "", "", style_name="group-header", key=key)
 
     def _add_split_rows(self, table: DataTable, record, flow_icon: str) -> None:
-        color = record.category.color.lower()
+        color = record.category.color.lower() if record.category is not None else "grey"
         amount_self = round(
             record.amount - get_record_total_split_amount(record.id),
             CONFIG.defaults.round_decimals,
