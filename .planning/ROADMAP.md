@@ -111,7 +111,13 @@ Plans:
 4. Auto-export triggers fire correctly on all CRUD operations
 5. LLM context output includes all required financial data sections
 
-**Plans:** TBD
+**Plans:** 4 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — Bidirectional sync integration tests (3 round-trip cycles, slug preservation, backup verification, corrupt YAML)
+- [ ] 04-02-PLAN.md — Auto-export trigger integration tests (real DB + real temp dir, all 5 entity types, create/update/delete)
+- [ ] 04-03-PLAN.md — Git conflict detection in run_full_import() + two-clone conflict simulation tests
+- [ ] 04-04-PLAN.md — CLI output format tests (table/JSON/YAML) + LLM context section completeness tests
 
 ---
 
@@ -122,7 +128,7 @@ Plans:
 | 1. Foundation | 0/6 | Planning complete | - |
 | 2. CLI Query Layer | 2/8 | In Progress|  |
 | 3. Automation | 4/4 | Complete    | 2026-03-15 |
-| 4. Verification | 0/5 | Not started | - |
+| 4. Verification | 0/4 | Planning complete | - |
 
 ## Coverage
 
@@ -151,3 +157,4 @@ Plans:
 *Plan split (01-01 → 01-01 + 01-01b): 2026-03-14*
 *FMT-04 de-scoped: 2026-03-14*
 *Plans created for Phase 3: 2026-03-16*
+*Plans created for Phase 4: 2026-03-19*
