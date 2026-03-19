@@ -104,7 +104,7 @@ class AccountMode(ScrollableContainer):
             description_label: Label = self.query_one(
                 f"#account-{account.id}-description"
             )
-            description_label.update(account.description)
+            description_label.update(account.description or "")
             if account.description == "" or account.description is None:
                 description_label.add_class("none")
             else:
