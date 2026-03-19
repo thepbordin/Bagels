@@ -111,7 +111,7 @@ Plans:
 4. Auto-export triggers fire correctly on all CRUD operations
 5. LLM context output includes all required financial data sections
 
-**Plans:** 2/4 plans executed
+**Plans:** 3/4 plans executed
 
 Plans:
 - [ ] 04-01-PLAN.md — Bidirectional sync integration tests (3 round-trip cycles, slug preservation, backup verification, corrupt YAML)
@@ -128,7 +128,7 @@ Plans:
 | 1. Foundation | 0/6 | Planning complete | - |
 | 2. CLI Query Layer | 2/8 | In Progress|  |
 | 3. Automation | 4/4 | Complete    | 2026-03-15 |
-| 4. Verification | 2/4 | In Progress|  |
+| 4. Verification | 3/4 | In Progress|  |
 
 ## Coverage
 

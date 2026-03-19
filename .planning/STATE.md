@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 current_phase: 4
-status: planning
-last_updated: "2026-03-19T07:49:32.088Z"
+status: executing
+last_updated: "2026-03-19T07:52:23.568Z"
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 22
-  completed_plans: 20
+  completed_plans: 21
 ---
 
 # State: Bagels v1
@@ -36,9 +36,9 @@ Transform Bagels from a binary SQLite database into a Git-trackable, LLM-accessi
 ## Current Position
 
 **Phase:** 4 - Verification
-**Plan:** 04-01 complete
+**Plan:** 04-02 complete
 **Status:** In progress
-**Progress Bar:** [█████████░] 86% (19/22 plans)
+**Progress Bar:** [█████████░] 95% (21/22 plans)
 
 ### Phase 2 Status
 
@@ -96,6 +96,7 @@ Transform Bagels from a binary SQLite database into a Git-trackable, LLM-accessi
 | Phase 03-automation P04 | 13 | 2 tasks | 3 files |
 | Phase 04-verification P01 | 8 | 1 tasks | 2 files |
 | Phase 04-verification P03 | 3 | 2 tasks | 2 files |
+| Phase 04-verification P02 | 525152 | 1 tasks | 2 files |
 
 ### Technical Context
 
@@ -149,21 +150,22 @@ None identified
 ## Session Continuity
 
 ### Last Session
-**Date:** 2026-03-16
-**Activity:** Phase 3 execution - Plan 03-04
-**Outcome:** 03-04 complete: run_full_import() in importer.py + @work(thread=True, exclusive=True) run_startup_import() in app.py. Non-blocking startup sync with optional git pull. 8/8 tests passing.
+**Date:** 2026-03-19
+**Activity:** Phase 4 execution - Plan 04-02
+**Outcome:** 04-02 complete: 10 integration tests for auto-export triggers across all 5 entity types. Fixed export_accounts soft-delete filter bug. 10/10 tests passing, 16/16 automation tests passing.
 
 ### Next Steps
-- **Phase 4**: Final integration, verification, and release
+- **Phase 4 Plan 04-03**: Remaining verification plans (TEST-02/03/05 still pending)
 
 ### Context Handoff
-Phase 3 automation COMPLETE. All 4 plans delivered:
-- 03-01: GitConfig model + git/operations.py
-- 03-02: CRUD export hooks in all 5 managers
-- 03-03: `bagels git` CLI command group
-- 03-04: Startup YAML import worker (DATA-08, GIT-08)
+Phase 4 verification in progress:
+- 04-01: Bidirectional sync integration tests (SQLite → YAML → SQLite round trips)
+- 04-02: Auto-export trigger integration tests (CRUD → real YAML files on disk, all 5 entity types)
+- 04-03: Remaining tests (TEST-02/03/05)
 
-Full bidirectional sync is live: TUI CRUD → daemon export threads → YAML → auto-commit. On startup: optional git pull → run_full_import() → YAML → SQLite. Data never stays stale.
+Key pattern for integration tests: `db_with_temp_root` fixture in tests/integration/conftest.py or inline — set_custom_root + rebuild db_engine + rebind all manager Sessions to tmp DB.
+
+Bug fixed: export_accounts now filters Account.deletedAt.is_(None) — soft-deleted accounts excluded from YAML.
 
 ---
 *State initialized: 2026-03-14*
