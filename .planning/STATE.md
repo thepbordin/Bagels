@@ -4,12 +4,12 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 4
 status: executing
-last_updated: "2026-03-19T07:52:23.568Z"
+last_updated: "2026-03-19T07:53:13.862Z"
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 22
-  completed_plans: 21
+  completed_plans: 22
 ---
 
 # State: Bagels v1
@@ -97,6 +97,7 @@ Transform Bagels from a binary SQLite database into a Git-trackable, LLM-accessi
 | Phase 04-verification P01 | 8 | 1 tasks | 2 files |
 | Phase 04-verification P03 | 3 | 2 tasks | 2 files |
 | Phase 04-verification P02 | 525152 | 1 tasks | 2 files |
+| Phase 04-verification P04 | 18 | 2 tasks | 5 files |
 
 ### Technical Context
 
@@ -151,21 +152,25 @@ None identified
 
 ### Last Session
 **Date:** 2026-03-19
-**Activity:** Phase 4 execution - Plan 04-02
-**Outcome:** 04-02 complete: 10 integration tests for auto-export triggers across all 5 entity types. Fixed export_accounts soft-delete filter bug. 10/10 tests passing, 16/16 automation tests passing.
+**Activity:** Phase 4 execution - Plan 04-04
+**Outcome:** 04-04 complete: 7 CLI output format tests (JSON/YAML/table for records, accounts, schema) and 8 LLM context completeness tests (all 5 required sections validated). 15/15 new tests passing, 36/36 integration tests total. Fixed 2 pre-existing bugs: is_() on relationship (records.py) and get_records() wrong API call (llm.py).
 
 ### Next Steps
-- **Phase 4 Plan 04-03**: Remaining verification plans (TEST-02/03/05 still pending)
+- Phase 4 COMPLETE — all 4 plans delivered
 
 ### Context Handoff
-Phase 4 verification in progress:
+Phase 4 verification COMPLETE. All 4 plans delivered:
 - 04-01: Bidirectional sync integration tests (SQLite → YAML → SQLite round trips)
 - 04-02: Auto-export trigger integration tests (CRUD → real YAML files on disk, all 5 entity types)
-- 04-03: Remaining tests (TEST-02/03/05)
+- 04-03: Git conflict detection tests (conflict marker detection, two-clone diverge simulation)
+- 04-04: CLI output format tests (JSON/YAML/table) + LLM context completeness tests
 
-Key pattern for integration tests: `db_with_temp_root` fixture in tests/integration/conftest.py or inline — set_custom_root + rebuild db_engine + rebind all manager Sessions to tmp DB.
+36 integration tests passing total. Requirements TEST-01 through TEST-05 met.
 
-Bug fixed: export_accounts now filters Account.deletedAt.is_(None) — soft-deleted accounts excluded from YAML.
+Key patterns established:
+- `patch("bagels.cli.X.Session", return_value=session)` to inject test session into CLI commands
+- Use `--month` filter in records tests to avoid "Showing N records" warning prefixing structured output
+- `tests/integration/conftest.py` provides `cli_runner` and `sample_cli_db` for all integration tests
 
 ---
 *State initialized: 2026-03-14*
