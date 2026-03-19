@@ -54,8 +54,8 @@ def export_accounts(session: Session, output_dir: Path) -> Path:
     Returns:
         Path to the created accounts.yaml file
     """
-    # Query all accounts
-    accounts = session.query(Account).all()
+    # Query only non-deleted accounts
+    accounts = session.query(Account).filter(Account.deletedAt.is_(None)).all()
 
     # Build dict structure keyed by slug
     accounts_dict = {}
