@@ -72,7 +72,7 @@
 
 ### Testing
 
-- [ ] **TEST-01**: Verify bidirectional sync (SQLite ↔ YAML ↔ SQLite)
+- [x] **TEST-01**: Verify bidirectional sync (SQLite ↔ YAML ↔ SQLite)
 - [ ] **TEST-02**: Test Git conflict resolution with merge markers
 - [ ] **TEST-03**: Verify CLI query output formats (table, JSON, YAML)
 - [ ] **TEST-04**: Test auto-export triggers on CRUD operations
@@ -168,7 +168,7 @@
 | CMD-01 | Phase 1 | Complete |
 | CMD-02 | Phase 1 | Complete |
 | CMD-03 | Phase 1 | Complete |
-| TEST-01 | Phase 4 | Pending |
+| TEST-01 | Phase 4 | Complete |
 | TEST-02 | Phase 4 | Pending |
 | TEST-03 | Phase 4 | Pending |
 | TEST-04 | Phase 4 | Pending |
