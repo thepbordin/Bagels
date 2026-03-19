@@ -14,7 +14,6 @@ from bagels.queries.spending import calculate_spending_by_category
 from bagels.queries.formatters import to_yaml
 from bagels.managers.accounts import get_all_accounts
 from bagels.managers.categories import get_all_categories_tree
-from bagels.managers.records import get_records
 
 
 @click.group()
@@ -127,6 +126,7 @@ def _get_spending_context(session, month):
 def _get_records_context(session, month, period, days):
     """Get recent records context."""
     from bagels.managers.utils import get_start_end_of_period
+    from sqlalchemy.orm import joinedload
 
     try:
         # Determine date range
@@ -149,11 +149,22 @@ def _get_records_context(session, month, period, days):
                 offset=0, offset_type="month"
             )
 
-        # Query records
-        records = get_records(session, start_date=start_date, end_date=end_date)
+        # Query records using the provided session with eager loading
+        from bagels.models.record import Record as RecordModel
+
+        query = session.query(RecordModel).options(
+            joinedload(RecordModel.category),
+            joinedload(RecordModel.account),
+        )
+        if start_date is not None:
+            query = query.filter(RecordModel.date >= start_date)
+        if end_date is not None:
+            query = query.filter(RecordModel.date < end_date)
+        query = query.order_by(RecordModel.date.desc())
+        records = query.all()
 
         # Limit to last 30 records for LLM context
-        recent_records = records[-30:] if len(records) > 30 else records
+        recent_records = records[:30]
 
         return [
             {
