@@ -140,6 +140,7 @@ None identified
 | 1 | Fix the ImportError for validateForm | 2026-03-14 | 114758c | [1-fix-the-importerror-for-validateform](./quick/1-fix-the-importerror-for-validateform/) |
 | 2 | Fix AttributeError CONFIG is None when --at flag used | 2026-03-17 | 1da59b5 | [2-fix-attributeerror-config-is-none-when-g](./quick/2-fix-attributeerror-config-is-none-when-g/) |
 | 3 | Fix AttributeError — null category crashes record table | 2026-03-19 | 54e4083 | [3-fix-attributeerror-config-is-none-when-r](./quick/3-fix-attributeerror-config-is-none-when-r/) |
+| 4 | Fix VisualError — account.description None in AccountMode.rebuild() | 2026-03-19 | 7075e7b | [4-fix-visualerror-account-description-none](./quick/4-fix-visualerror-account-description-none/) |
 
 ### Todos
 
