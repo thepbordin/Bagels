@@ -69,7 +69,7 @@ def list_records(
                 joinedload(Record.account),
                 joinedload(Record.transferToAccount),
             )
-            .filter(Record.transferToAccount.is_(None))
+            .filter(Record.transferToAccountId.is_(None))
         )
 
         # Apply filters
