@@ -54,15 +54,20 @@ def get_categories_count():
     """Count all categories excluding deleted ones."""
     session = Session()
     try:
-        stmt = select(Category)
+        stmt = select(Category).filter(Category.deletedAt.is_(None))
         return len(session.scalars(stmt).all())
     finally:
         session.close()
 
 
-def get_all_categories_tree() -> list[tuple[Category, Text, int]]:
+def get_all_categories_tree(session=None) -> list[tuple[Category, Text, int]]:
     """Retrieve all categories in a hierarchical tree format."""
-    session = Session()
+    if session is None:
+        session = Session()
+        should_close = True
+    else:
+        should_close = False
+
     try:
         stmt = (
             select(Category)
@@ -94,7 +99,8 @@ def get_all_categories_tree() -> list[tuple[Category, Text, int]]:
 
         return build_category_tree()
     finally:
-        session.close()
+        if should_close:
+            session.close()
 
 
 def get_all_categories_by_freq():

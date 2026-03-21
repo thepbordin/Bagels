@@ -26,10 +26,7 @@ class TestCategoryExport:
         """
         # Arrange
         category = Category(
-            name="Groceries",
-            parentCategoryId=None,
-            nature=Nature.NEED,
-            color="#FF5733"
+            name="Groceries", parentCategoryId=None, nature=Nature.NEED, color="#FF5733"
         )
         in_memory_db.add(category)
         in_memory_db.commit()
@@ -44,7 +41,7 @@ class TestCategoryExport:
         assert result_path.exists()
 
         # Verify YAML structure
-        with open(result_path, 'r') as f:
+        with open(result_path, "r") as f:
             data = yaml.safe_load(f)
 
         assert "categories" in data
@@ -60,7 +57,9 @@ class TestCategoryExport:
         assert exported_category["nature"] == "Need"
         assert exported_category["color"] == "#FF5733"
 
-    def test_export_category_with_parent_child_relationship(self, in_memory_db, temp_directory):
+    def test_export_category_with_parent_child_relationship(
+        self, in_memory_db, temp_directory
+    ):
         """
         Test exporting categories with parent-child relationship.
 
@@ -72,10 +71,7 @@ class TestCategoryExport:
         """
         # Arrange
         parent = Category(
-            name="Food",
-            parentCategoryId=None,
-            nature=Nature.NEED,
-            color="#FF5733"
+            name="Food", parentCategoryId=None, nature=Nature.NEED, color="#FF5733"
         )
         in_memory_db.add(parent)
         in_memory_db.flush()  # Get parent ID
@@ -84,7 +80,7 @@ class TestCategoryExport:
             name="Groceries",
             parentCategoryId=parent.id,
             nature=Nature.NEED,
-            color="#FF5733"
+            color="#FF5733",
         )
         in_memory_db.add(child)
         in_memory_db.commit()
@@ -98,7 +94,7 @@ class TestCategoryExport:
         assert result_path.exists()
 
         # Verify YAML structure
-        with open(result_path, 'r') as f:
+        with open(result_path, "r") as f:
             data = yaml.safe_load(f)
 
         assert "categories" in data
@@ -125,19 +121,13 @@ class TestCategoryExport:
         """
         # Arrange
         level1 = Category(
-            name="Expenses",
-            parentCategoryId=None,
-            nature=Nature.NEED,
-            color="#FF0000"
+            name="Expenses", parentCategoryId=None, nature=Nature.NEED, color="#FF0000"
         )
         in_memory_db.add(level1)
         in_memory_db.flush()
 
         level2 = Category(
-            name="Food",
-            parentCategoryId=level1.id,
-            nature=Nature.NEED,
-            color="#FF5733"
+            name="Food", parentCategoryId=level1.id, nature=Nature.NEED, color="#FF5733"
         )
         in_memory_db.add(level2)
         in_memory_db.flush()
@@ -146,7 +136,7 @@ class TestCategoryExport:
             name="Groceries",
             parentCategoryId=level2.id,
             nature=Nature.NEED,
-            color="#FF5733"
+            color="#FF5733",
         )
         in_memory_db.add(level3)
         in_memory_db.commit()
@@ -157,7 +147,7 @@ class TestCategoryExport:
         result_path = export_categories_to_yaml(in_memory_db, temp_directory)
 
         # Verify all levels present
-        with open(result_path, 'r') as f:
+        with open(result_path, "r") as f:
             data = yaml.safe_load(f)
 
         assert len(data["categories"]) == 3
@@ -183,19 +173,13 @@ class TestCategoryExport:
         """
         # Arrange
         root1 = Category(
-            name="Housing",
-            parentCategoryId=None,
-            nature=Nature.MUST,
-            color="#00FF00"
+            name="Housing", parentCategoryId=None, nature=Nature.MUST, color="#00FF00"
         )
         in_memory_db.add(root1)
         in_memory_db.flush()
 
         child1 = Category(
-            name="Rent",
-            parentCategoryId=root1.id,
-            nature=Nature.MUST,
-            color="#00FF00"
+            name="Rent", parentCategoryId=root1.id, nature=Nature.MUST, color="#00FF00"
         )
         in_memory_db.add(child1)
         in_memory_db.flush()
@@ -204,16 +188,13 @@ class TestCategoryExport:
             name="Transportation",
             parentCategoryId=None,
             nature=Nature.NEED,
-            color="#0000FF"
+            color="#0000FF",
         )
         in_memory_db.add(root2)
         in_memory_db.flush()
 
         child2 = Category(
-            name="Gas",
-            parentCategoryId=root2.id,
-            nature=Nature.NEED,
-            color="#0000FF"
+            name="Gas", parentCategoryId=root2.id, nature=Nature.NEED, color="#0000FF"
         )
         in_memory_db.add(child2)
         in_memory_db.flush()
@@ -222,7 +203,7 @@ class TestCategoryExport:
             name="Entertainment",
             parentCategoryId=None,
             nature=Nature.WANT,
-            color="#FF00FF"
+            color="#FF00FF",
         )
         in_memory_db.add(root3)
         in_memory_db.commit()
@@ -233,10 +214,10 @@ class TestCategoryExport:
         result_path = export_categories_to_yaml(in_memory_db, temp_directory)
 
         # Verify all roots and children present
-        with open(result_path, 'r') as f:
+        with open(result_path, "r") as f:
             data = yaml.safe_load(f)
 
-        assert len(data["categories"]) == 6  # 3 roots + 3 children
+        assert len(data["categories"]) == 5  # 3 roots + 2 children
 
         # Verify root categories have null parentSlug
         for root in [root1, root2, root3]:
@@ -260,7 +241,7 @@ class TestCategoryExport:
             name="Test Category",
             parentCategoryId=None,
             nature=Nature.WANT,
-            color="#ABCDEF"
+            color="#ABCDEF",
         )
         in_memory_db.add(category)
         in_memory_db.commit()
@@ -271,7 +252,7 @@ class TestCategoryExport:
         result_path = export_category_to_yaml(category, temp_directory)
 
         # Verify all fields
-        with open(result_path, 'r') as f:
+        with open(result_path, "r") as f:
             data = yaml.safe_load(f)
 
         exported = data["categories"][category.slug]

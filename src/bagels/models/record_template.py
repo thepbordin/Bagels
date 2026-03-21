@@ -1,4 +1,5 @@
 from datetime import datetime
+import re
 
 from sqlalchemy import (
     Boolean,
@@ -13,7 +14,7 @@ from sqlalchemy import (
     func,
     select,
 )
-from sqlalchemy.orm import relationship, validates
+from sqlalchemy.orm import relationship, synonym, validates
 
 from bagels.config import CONFIG
 
@@ -36,6 +37,7 @@ class RecordTemplate(Base):
     categoryId = Column(Integer, ForeignKey("category.id"), nullable=True)
 
     order = Column(Integer, nullable=False, unique=True)
+    ordinal = synonym("order")
 
     isIncome = Column(Boolean, nullable=False, default=False)
     isTransfer = Column(
@@ -77,7 +79,30 @@ class RecordTemplate(Base):
 
 @event.listens_for(RecordTemplate, "before_insert")
 def receive_before_insert(mapper, connection, target):
-    max_order = connection.execute(
-        select(func.max(RecordTemplate.order))
-    ).scalar_one_or_none()
-    target.order = (max_order or 0) + 1
+    if target.order is None:
+        counter_key = "record_template_order_counter"
+        next_order = connection.info.get(counter_key)
+        if next_order is None:
+            max_order = connection.execute(
+                select(func.max(RecordTemplate.order))
+            ).scalar_one_or_none()
+            next_order = max_order or 0
+        next_order += 1
+        connection.info[counter_key] = next_order
+        target.order = next_order
+    if target.slug:
+        return
+
+    label = (target.label or "template").strip().lower()
+    label = re.sub(r"[^a-z0-9]+", "_", label).strip("_") or "template"
+    base_slug = f"tpl_{label}"
+    slug = base_slug
+    index = 2
+
+    while connection.execute(
+        select(RecordTemplate.id).where(RecordTemplate.slug == slug)
+    ).first():
+        slug = f"{base_slug}_{index}"
+        index += 1
+
+    target.slug = slug

@@ -20,6 +20,15 @@ from bagels.importer.validator import ValidationError, validate_yaml
 CONFLICT_MARKER = "<<<<<<< HEAD"
 
 
+def _extract_entity_data(yaml_data: dict, entity_key: str) -> dict:
+    """Accept wrapped ({entity: {...}}) and unwrapped ({slug: {...}}) formats."""
+    if not isinstance(yaml_data, dict):
+        return {}
+    if entity_key in yaml_data and isinstance(yaml_data[entity_key], dict):
+        return yaml_data[entity_key]
+    return yaml_data
+
+
 class ConflictError(Exception):
     """Raised when YAML files contain unresolved git conflict markers."""
 
@@ -115,7 +124,7 @@ def import_accounts_from_yaml(yaml_data: dict, session: Session) -> Tuple[int, i
     if not is_valid:
         raise ValidationError("YAML validation failed", errors)
 
-    accounts_data = yaml_data.get("accounts", {})
+    accounts_data = _extract_entity_data(yaml_data, "accounts")
 
     for slug, account_data in accounts_data.items():
         # Check if account exists
@@ -159,6 +168,7 @@ def import_categories_from_yaml(yaml_data: dict, session: Session) -> Tuple[int,
         ValidationError: If YAML validation fails
     """
     from bagels.models.category import Category
+    from bagels.models.category import Nature
 
     imported_count = 0
     updated_count = 0
@@ -168,7 +178,7 @@ def import_categories_from_yaml(yaml_data: dict, session: Session) -> Tuple[int,
     if not is_valid:
         raise ValidationError("YAML validation failed", errors)
 
-    categories_data = yaml_data.get("categories", {})
+    categories_data = _extract_entity_data(yaml_data, "categories")
 
     for slug, category_data in categories_data.items():
         existing = session.query(Category).filter(Category.slug == slug).first()
@@ -189,6 +199,16 @@ def import_categories_from_yaml(yaml_data: dict, session: Session) -> Tuple[int,
                         existing.parentCategoryId = None
                 elif key in ["createdAt", "updatedAt"]:
                     setattr(existing, key, datetime.fromisoformat(value))
+                elif key == "nature" and isinstance(value, str):
+                    normalized = value.strip().lower()
+                    legacy_map = {
+                        "expense": Nature.NEED,
+                        "income": Nature.WANT,
+                        "need": Nature.NEED,
+                        "want": Nature.WANT,
+                        "must": Nature.MUST,
+                    }
+                    setattr(existing, key, legacy_map.get(normalized, value))
                 else:
                     setattr(existing, key, value)
             updated_count += 1
@@ -206,6 +226,16 @@ def import_categories_from_yaml(yaml_data: dict, session: Session) -> Tuple[int,
                         category.parentCategoryId = parent.id if parent else None
                 elif key in ["createdAt", "updatedAt"]:
                     setattr(category, key, datetime.fromisoformat(value))
+                elif key == "nature" and isinstance(value, str):
+                    normalized = value.strip().lower()
+                    legacy_map = {
+                        "expense": Nature.NEED,
+                        "income": Nature.WANT,
+                        "need": Nature.NEED,
+                        "want": Nature.WANT,
+                        "must": Nature.MUST,
+                    }
+                    setattr(category, key, legacy_map.get(normalized, value))
                 else:
                     setattr(category, key, value)
             session.add(category)
@@ -239,7 +269,7 @@ def import_persons_from_yaml(yaml_data: dict, session: Session) -> Tuple[int, in
     if not is_valid:
         raise ValidationError("YAML validation failed", errors)
 
-    persons_data = yaml_data.get("persons", {})
+    persons_data = _extract_entity_data(yaml_data, "persons")
 
     for slug, person_data in persons_data.items():
         existing = session.query(Person).filter(Person.slug == slug).first()
@@ -291,7 +321,7 @@ def import_templates_from_yaml(yaml_data: dict, session: Session) -> Tuple[int, 
     if not is_valid:
         raise ValidationError("YAML validation failed", errors)
 
-    templates_data = yaml_data.get("templates", {})
+    templates_data = _extract_entity_data(yaml_data, "templates")
 
     for slug, template_data in templates_data.items():
         existing = (
@@ -396,7 +426,7 @@ def import_records_from_yaml(yaml_data: dict, session: Session) -> Tuple[int, in
     if not is_valid:
         raise ValidationError("YAML validation failed", errors)
 
-    records_data = yaml_data.get("records", {})
+    records_data = _extract_entity_data(yaml_data, "records")
 
     for slug, record_data in records_data.items():
         existing = session.query(Record).filter(Record.slug == slug).first()
@@ -501,7 +531,7 @@ def run_full_import() -> None:
         if accounts_file.exists():
             with open(accounts_file) as f:
                 yaml_data = _yaml.safe_load(f) or {}
-            if yaml_data.get("accounts"):
+            if _extract_entity_data(yaml_data, "accounts"):
                 import_accounts_from_yaml(yaml_data, session)
 
         # --- categories ---
@@ -509,7 +539,7 @@ def run_full_import() -> None:
         if categories_file.exists():
             with open(categories_file) as f:
                 yaml_data = _yaml.safe_load(f) or {}
-            if yaml_data.get("categories"):
+            if _extract_entity_data(yaml_data, "categories"):
                 import_categories_from_yaml(yaml_data, session)
 
         # --- persons ---
@@ -517,7 +547,7 @@ def run_full_import() -> None:
         if persons_file.exists():
             with open(persons_file) as f:
                 yaml_data = _yaml.safe_load(f) or {}
-            if yaml_data.get("persons"):
+            if _extract_entity_data(yaml_data, "persons"):
                 import_persons_from_yaml(yaml_data, session)
 
         # --- templates ---
@@ -525,7 +555,7 @@ def run_full_import() -> None:
         if templates_file.exists():
             with open(templates_file) as f:
                 yaml_data = _yaml.safe_load(f) or {}
-            if yaml_data.get("templates"):
+            if _extract_entity_data(yaml_data, "templates"):
                 import_templates_from_yaml(yaml_data, session)
 
         # --- records (monthly files) ---
@@ -534,7 +564,7 @@ def run_full_import() -> None:
             for record_file in sorted(records_dir.glob("*.yaml")):
                 with open(record_file) as f:
                     yaml_data = _yaml.safe_load(f) or {}
-                if yaml_data.get("records"):
+                if _extract_entity_data(yaml_data, "records"):
                     import_records_from_yaml(yaml_data, session)
 
     finally:

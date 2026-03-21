@@ -225,9 +225,20 @@ def load_config():
 
     global CONFIG
     try:
+        current_config = CONFIG
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            CONFIG = Config()  # ignore warnings about empty env file
+            loaded_config = Config()  # ignore warnings about empty env file
+        if current_config is None:
+            CONFIG = loaded_config
+        else:
+            # Preserve object identity so existing references remain valid.
+            current_config.hotkeys = loaded_config.hotkeys
+            current_config.symbols = loaded_config.symbols
+            current_config.defaults = loaded_config.defaults
+            current_config.state = loaded_config.state
+            current_config.git = loaded_config.git
+            CONFIG = current_config
     except ConfigurationError as e:
         print("\nConfiguration Error:")
         print("==================")

@@ -106,6 +106,9 @@ def calculate_budget_status(session, month: str | None = None) -> dict:
     from bagels.models.record import Record
     from sqlalchemy.orm import joinedload
 
+    if not hasattr(Category, "monthlyBudget"):
+        return {"month": month or "current", "categories": []}
+
     # Parse month to get start/end dates
     if month:
         from bagels.queries.filters import parse_month

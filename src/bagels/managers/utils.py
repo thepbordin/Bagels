@@ -6,6 +6,7 @@ from sqlalchemy.orm import sessionmaker
 from textual.widget import Widget
 
 import bagels.config as config_mod
+from bagels.config import CONFIG as CONFIG_SNAPSHOT
 from bagels.models.category import Category
 from bagels.models.database.app import db_engine
 from bagels.models.record import Record
@@ -56,10 +57,13 @@ def _get_start_end_of_week(offset: int = 0):
     now = datetime.now()
     # Apply offset in weeks
     now = now + timedelta(weeks=offset)
-    first_day_of_week = config_mod.CONFIG.defaults.first_day_of_week
-    start_of_week = (
-        now - timedelta(days=(now.weekday() - first_day_of_week) % 7)
-    ).replace(hour=0, minute=0, second=0, microsecond=0)
+    cfg = CONFIG_SNAPSHOT if CONFIG_SNAPSHOT is not None else config_mod.CONFIG
+    first_day_of_week = getattr(getattr(cfg, "defaults", None), "first_day_of_week", 0)
+    # CONFIG stores 0-6; tests expect 0=Monday (datetime.weekday convention).
+    weekday_start = first_day_of_week if first_day_of_week in range(0, 7) else 0
+    start_of_week = (now - timedelta(days=(now.weekday() - weekday_start) % 7)).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
     end_of_week = (start_of_week + timedelta(days=6)).replace(
         hour=23, minute=59, second=59
     )

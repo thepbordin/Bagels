@@ -9,12 +9,36 @@ import click
 from rich.table import Table
 from rich.console import Console
 from rich.text import Text
+from sqlalchemy import create_engine, text
 
-from bagels.models.database.app import Session
+from bagels.config import load_config
+from bagels.locations import database_file
+from bagels.models.database.app import Session as AppSession, init_db
+from bagels.models.database.db import Base
 from bagels.managers.categories import get_all_categories_tree
 from bagels.queries.formatters import to_json, to_yaml
 
 console = Console()
+Session = AppSession
+
+
+def _open_session():
+    """Open session with current DB path while allowing tests to patch Session."""
+    engine = None
+    if hasattr(Session, "configure"):
+        engine = create_engine(f"sqlite:///{database_file().resolve()}")
+        Base.metadata.create_all(engine)
+        Session.configure(bind=engine)
+    session = Session()
+    try:
+        has_account = session.execute(
+            text("SELECT name FROM sqlite_master WHERE type='table' AND name='account'")
+        ).scalar()
+        if not has_account:
+            Base.metadata.create_all(bind=session.get_bind())
+    except Exception:
+        Base.metadata.create_all(bind=session.get_bind())
+    return session, engine
 
 
 @click.group()
@@ -33,10 +57,13 @@ def categories():
 )
 def categories_tree(format):
     """Show category hierarchy as a tree."""
-    session = Session()
+    load_config()
+    init_db()
+
+    session, engine = _open_session()
     try:
         # Get category tree from manager
-        category_tree = get_all_categories_tree()
+        category_tree = get_all_categories_tree(session)
 
         if not category_tree:
             click.echo("No categories found.")
@@ -106,3 +133,5 @@ def categories_tree(format):
 
     finally:
         session.close()
+        if engine is not None:
+            engine.dispose()

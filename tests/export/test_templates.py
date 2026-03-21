@@ -9,13 +9,16 @@ import pytest
 from pathlib import Path
 import yaml
 
+from bagels.models.account import Account
 from bagels.models.record_template import RecordTemplate
 
 
 class TestTemplateExport:
     """Test suite for record template export functionality."""
 
-    def test_export_single_template(self, in_memory_db, temp_directory, sample_account, sample_category):
+    def test_export_single_template(
+        self, in_memory_db, temp_directory, sample_account, sample_category
+    ):
         """
         Test exporting a single template to YAML.
 
@@ -32,7 +35,7 @@ class TestTemplateExport:
             accountId=sample_account.id,
             categoryId=sample_category.id,
             isIncome=False,
-            isTransfer=False
+            isTransfer=False,
         )
         in_memory_db.add(template)
         in_memory_db.commit()
@@ -47,7 +50,7 @@ class TestTemplateExport:
         assert result_path.exists()
 
         # Verify YAML structure
-        with open(result_path, 'r') as f:
+        with open(result_path, "r") as f:
             data = yaml.safe_load(f)
 
         assert "templates" in data
@@ -69,7 +72,9 @@ class TestTemplateExport:
         assert "categoryId" not in exported_template
         assert "id" not in exported_template
 
-    def test_export_multiple_templates(self, in_memory_db, temp_directory, sample_account, sample_category):
+    def test_export_multiple_templates(
+        self, in_memory_db, temp_directory, sample_account, sample_category
+    ):
         """
         Test exporting multiple templates to YAML.
 
@@ -84,21 +89,21 @@ class TestTemplateExport:
             amount=100.0,
             accountId=sample_account.id,
             categoryId=sample_category.id,
-            isIncome=False
+            isIncome=False,
         )
         template2 = RecordTemplate(
             label="Template 2",
             amount=200.0,
             accountId=sample_account.id,
             categoryId=sample_category.id,
-            isIncome=True
+            isIncome=True,
         )
         template3 = RecordTemplate(
             label="Template 3",
             amount=300.0,
             accountId=sample_account.id,
             categoryId=sample_category.id,
-            isIncome=False
+            isIncome=False,
         )
 
         in_memory_db.add_all([template1, template2, template3])
@@ -114,7 +119,7 @@ class TestTemplateExport:
         assert result_path.exists()
 
         # Verify YAML structure
-        with open(result_path, 'r') as f:
+        with open(result_path, "r") as f:
             data = yaml.safe_load(f)
 
         assert "templates" in data
@@ -124,7 +129,14 @@ class TestTemplateExport:
         for template in [template1, template2, template3]:
             assert template.slug in data["templates"]
 
-    def test_export_template_with_all_relationships(self, in_memory_db, temp_directory, sample_account, sample_category, sample_person):
+    def test_export_template_with_all_relationships(
+        self,
+        in_memory_db,
+        temp_directory,
+        sample_account,
+        sample_category,
+        sample_person,
+    ):
         """
         Test exporting template with all relationship types.
 
@@ -140,7 +152,7 @@ class TestTemplateExport:
             accountId=sample_account.id,
             categoryId=sample_category.id,
             isIncome=False,
-            isTransfer=False
+            isTransfer=False,
         )
         in_memory_db.add(template)
         in_memory_db.commit()
@@ -151,7 +163,7 @@ class TestTemplateExport:
         result_path = export_template_to_yaml(template, temp_directory)
 
         # Verify all relationships use slugs
-        with open(result_path, 'r') as f:
+        with open(result_path, "r") as f:
             data = yaml.safe_load(f)
 
         exported = data["templates"][template.slug]
@@ -165,7 +177,9 @@ class TestTemplateExport:
         assert "id" not in exported
         assert "personId" not in exported
 
-    def test_export_template_with_transfer(self, in_memory_db, temp_directory, sample_account):
+    def test_export_template_with_transfer(
+        self, in_memory_db, temp_directory, sample_account
+    ):
         """
         Test exporting template with transfer relationship.
 
@@ -179,7 +193,7 @@ class TestTemplateExport:
             name="From Account",
             description="Source account",
             beginningBalance=1000.0,
-            hidden=False
+            hidden=False,
         )
         in_memory_db.add(from_account)
         in_memory_db.flush()
@@ -190,7 +204,7 @@ class TestTemplateExport:
             accountId=from_account.id,
             isTransfer=True,
             isIncome=False,
-            transferToAccountId=to_account.id
+            transferToAccountId=to_account.id,
         )
         in_memory_db.add(template)
         in_memory_db.commit()
@@ -201,7 +215,7 @@ class TestTemplateExport:
         result_path = export_template_to_yaml(template, temp_directory)
 
         # Verify transfer uses slug
-        with open(result_path, 'r') as f:
+        with open(result_path, "r") as f:
             data = yaml.safe_load(f)
 
         exported = data["templates"][template.slug]
@@ -210,7 +224,9 @@ class TestTemplateExport:
         # No integer ID
         assert "transferToAccountId" not in exported
 
-    def test_export_template_with_metadata(self, in_memory_db, temp_directory, sample_account, sample_category):
+    def test_export_template_with_metadata(
+        self, in_memory_db, temp_directory, sample_account, sample_category
+    ):
         """
         Test exporting template with metadata and order.
 
@@ -225,7 +241,7 @@ class TestTemplateExport:
             amount=100.0,
             accountId=sample_account.id,
             categoryId=sample_category.id,
-            isIncome=False
+            isIncome=False,
         )
         in_memory_db.add(template)
         in_memory_db.commit()
@@ -236,7 +252,7 @@ class TestTemplateExport:
         result_path = export_template_to_yaml(template, temp_directory)
 
         # Verify metadata
-        with open(result_path, 'r') as f:
+        with open(result_path, "r") as f:
             data = yaml.safe_load(f)
 
         exported = data["templates"][template.slug]

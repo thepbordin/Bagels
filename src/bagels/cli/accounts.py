@@ -6,9 +6,33 @@ querying and managing accounts.
 """
 
 import click
+from sqlalchemy import create_engine, text
 
-from bagels.models.database.app import init_db, Session
+from bagels.locations import database_file
+from bagels.models.database.app import Session as AppSession, init_db
+from bagels.models.database.db import Base
 from bagels.queries.formatters import format_accounts
+
+Session = AppSession
+
+
+def _open_session():
+    """Open session with current DB path while allowing tests to patch Session."""
+    engine = None
+    if hasattr(Session, "configure"):
+        engine = create_engine(f"sqlite:///{database_file().resolve()}")
+        Base.metadata.create_all(engine)
+        Session.configure(bind=engine)
+    session = Session()
+    try:
+        has_account = session.execute(
+            text("SELECT name FROM sqlite_master WHERE type='table' AND name='account'")
+        ).scalar()
+        if not has_account:
+            Base.metadata.create_all(bind=session.get_bind())
+    except Exception:
+        Base.metadata.create_all(bind=session.get_bind())
+    return session, engine
 
 
 @click.group()
@@ -27,7 +51,8 @@ def accounts():
 )
 def list_accounts(format: str):
     """List all accounts with balances."""
-    from bagels.managers.accounts import get_all_accounts, get_account_balance
+    from bagels.models.account import Account
+    from bagels.managers.accounts import get_account_balance
     from bagels.config import load_config
 
     # Load config
@@ -36,11 +61,15 @@ def list_accounts(format: str):
     # Initialize database
     init_db()
 
-    # Create session
-    session = Session()
+    # Create session bound to the current custom-root database path.
+    session, engine = _open_session()
     try:
-        # Query accounts
-        accounts_list = get_all_accounts(session)
+        # Query visible accounts from the active session.
+        accounts_list = (
+            session.query(Account)
+            .filter(Account.deletedAt.is_(None), Account.hidden.is_(False))
+            .all()
+        )
 
         if not accounts_list:
             click.echo("No accounts found.")
@@ -59,3 +88,5 @@ def list_accounts(format: str):
         raise click.ClickException(str(e))
     finally:
         session.close()
+        if engine is not None:
+            engine.dispose()
