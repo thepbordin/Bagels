@@ -2,43 +2,45 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 4
-status: completed
-last_updated: "2026-03-19T07:56:52.464Z"
+current_phase: 05
+status: complete
+last_updated: "2026-03-21T12:19:00.325Z"
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 22
-  completed_plans: 22
+  total_phases: 6
+  completed_phases: 5
+  total_plans: 25
+  completed_plans: 25
 ---
 
 # State: Bagels v1
 
-**Last Updated:** 2026-03-19
-**Current Phase:** 4
-**Overall Progress:** 19/22 plans complete (86%)
+**Last Updated:** 2026-03-21
+**Current Phase:** 05
+**Overall Progress:** 25/25 plans complete (100%)
 
 ## Project Reference
 
 ### Core Value
-Expense data that lives outside proprietary formats — all financial data stored as human-readable, Git-tracked YAML files
+
+Local-first expense tracking with SQLite as the runtime source of truth and optional human-readable exports for portability.
 
 ### What We're Building
-Transform Bagels from a binary SQLite database into a Git-trackable, LLM-accessible personal finance system with:
-- YAML data export/import for all entities
-- Git repository integration with auto-commit and sync
+
+Deliver a reliable SQLite-first personal finance workflow with:
+
+- Stable local runtime behavior without Git/YAML sync side effects
 - CLI query interface for structured data access
-- LLM context commands for financial snapshots
+- LLM context and schema commands
+- Backward-compatible handling of legacy sync config/data
 
 ### Current Focus
-**Phase 3: Automation** - Automate YAML export/import lifecycle and Git operations for seamless sync
+
+**Phase 5: Requirement Reduction** - Completed SQLite-only runtime reduction and verification
 
 ## Current Position
 
-**Phase:** 4 - Verification
-**Plan:** 04-02 complete
-**Status:** Milestone complete
-**Progress Bar:** [█████████░] 95% (21/22 plans)
+Phase: 05 (requirement-reduction-remove-buggy-git-and-yaml-loader) — COMPLETE
+Plan: 3 of 3
 
 ### Phase 2 Status
 
@@ -47,6 +49,7 @@ Transform Bagels from a binary SQLite database into a Git-trackable, LLM-accessi
 **Requirements:** CLI-01 through CLI-10, LLM-01 through LLM-05 ✓ ALL MET
 
 **Success Criteria:**
+
 1. ✓ Query records with filters (month, category, date range, amount, account, person)
 2. ✓ Generate summaries and spending breakdowns
 3. ✓ Dump financial snapshot for LLM consumption
@@ -60,13 +63,18 @@ Transform Bagels from a binary SQLite database into a Git-trackable, LLM-accessi
 
 ## Performance Metrics
 
-- **Requirements:** 53 total, 53 mapped (100%)
-- **Phases:** 4
-- **Current Phase:** 1/4
+- **Requirements:** 57 total, 57 mapped (100%)
+- **Phases:** 6
+- **Current Phase:** 5/6
 - **Success Criteria:** 22 total across all phases
-- **Completion:** 0/22 criteria met (0%)
+- **Completion:** 22/22 criteria met (100%)
 
 ## Accumulated Context
+
+### Roadmap Evolution
+
+- Phase 04.1 inserted after Phase 4: fix test errors try to run uv run pytest investigate & FIX (URGENT)
+- Phase 5 added: Requirement Reduction, remove buggy git and yaml loader
 
 ### Key Decisions
 
@@ -102,18 +110,21 @@ Transform Bagels from a binary SQLite database into a Git-trackable, LLM-accessi
 ### Technical Context
 
 **Existing Stack:**
+
 - Python 3.13
 - Textual 1.0 TUI framework
 - SQLAlchemy 2.0 ORM
 - SQLite storage in `~/.local/share/bagels/db.db`
 
 **v1 Additions:**
+
 - YAML export/import layer
 - Git repository integration
 - CLI query interface
 - Configuration system for Git settings
 
 **Data Flow:**
+
 ```
 TUI → SQLite → YAML → Git → Remote
      ↓       ↑      ↓      ↑
@@ -141,6 +152,7 @@ None identified
 | 2 | Fix AttributeError CONFIG is None when --at flag used | 2026-03-17 | 1da59b5 | [2-fix-attributeerror-config-is-none-when-g](./quick/2-fix-attributeerror-config-is-none-when-g/) |
 | 3 | Fix AttributeError — null category crashes record table | 2026-03-19 | 54e4083 | [3-fix-attributeerror-config-is-none-when-r](./quick/3-fix-attributeerror-config-is-none-when-r/) |
 | 4 | Fix VisualError — account.description None in AccountMode.rebuild() | 2026-03-19 | 7075e7b | [4-fix-visualerror-account-description-none](./quick/4-fix-visualerror-account-description-none/) |
+| 260321-s6x | Fix OperationalError `no such column: account.slug` when using `--at ./instance` | 2026-03-21 | N/A | [260321-s6x-fix-no-such-column-account-slug-when-run](./quick/260321-s6x-fix-no-such-column-account-slug-when-run/) |
 
 ### Todos
 
@@ -153,26 +165,28 @@ None identified
 ## Session Continuity
 
 ### Last Session
-**Date:** 2026-03-19
-**Activity:** Phase 4 execution - Plan 04-04
-**Outcome:** 04-04 complete: 7 CLI output format tests (JSON/YAML/table for records, accounts, schema) and 8 LLM context completeness tests (all 5 required sections validated). 15/15 new tests passing, 36/36 integration tests total. Fixed 2 pre-existing bugs: is_() on relationship (records.py) and get_records() wrong API call (llm.py).
+
+**Date:** 2026-03-21
+**Activity:** Phase 5 discuss-phase context gathering
+**Outcome:** Created `05-CONTEXT.md` with implementation decisions for requirement reduction (remove Git/YAML sync pathways, preserve YAML query output, SQLite-only runtime target).
 
 ### Next Steps
-- Phase 4 COMPLETE — all 4 plans delivered
+
+- Run `$gsd-plan-phase 5` to convert captured decisions into executable plans.
 
 ### Context Handoff
-Phase 4 verification COMPLETE. All 4 plans delivered:
-- 04-01: Bidirectional sync integration tests (SQLite → YAML → SQLite round trips)
-- 04-02: Auto-export trigger integration tests (CRUD → real YAML files on disk, all 5 entity types)
-- 04-03: Git conflict detection tests (conflict marker detection, two-clone diverge simulation)
-- 04-04: CLI output format tests (JSON/YAML/table) + LLM context completeness tests
 
-36 integration tests passing total. Requirements TEST-01 through TEST-05 met.
+Phase 5 context captured at:
+`.planning/phases/05-requirement-reduction-remove-buggy-git-and-yaml-loader/05-CONTEXT.md`
 
-Key patterns established:
-- `patch("bagels.cli.X.Session", return_value=session)` to inject test session into CLI commands
-- Use `--month` filter in records tests to avoid "Showing N records" warning prefixing structured output
-- `tests/integration/conftest.py` provides `cli_runner` and `sample_cli_db` for all integration tests
+Decisions locked:
+
+- Remove all Git and YAML sync/storage paths (auto and manual).
+- Keep YAML only as CLI query output format.
+- Remove `bagels git`, `bagels export`, and `bagels import` command paths.
+- Leave legacy YAML files and legacy Git repos untouched and silently ignored.
+- Keep `git.*` config parsing with one-time deprecation warning.
+- Require full `uv run pytest` pass for phase completion.
 
 ---
 *State initialized: 2026-03-14*

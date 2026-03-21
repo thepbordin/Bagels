@@ -1,5 +1,6 @@
 from datetime import datetime
 from pathlib import Path
+import sys
 
 import yaml
 from sqlalchemy import create_engine, inspect, text
@@ -18,6 +19,41 @@ from bagels.models.split import Split  # noqa: F401
 
 db_engine = create_engine(f"sqlite:///{database_file().resolve()}")
 Session = sessionmaker(bind=db_engine)
+
+
+def _rebind_loaded_sessionmakers(new_engine) -> None:
+    """Rebind Session factories in already-imported modules.
+
+    `bagels --at <path>` sets custom root at runtime, but many manager modules
+    are imported earlier from `__main__` and hold their own Session factories.
+    Rebinding these keeps all queries pointed at the active database.
+    """
+
+    module_names = (
+        "bagels.managers.accounts",
+        "bagels.managers.categories",
+        "bagels.managers.persons",
+        "bagels.managers.record_templates",
+        "bagels.managers.records",
+        "bagels.managers.splits",
+        "bagels.managers.utils",
+        "bagels.managers.samples",
+    )
+
+    for module_name in module_names:
+        module = sys.modules.get(module_name)
+        if module is None:
+            continue
+
+        session_factory = getattr(module, "Session", None)
+        if session_factory is None:
+            continue
+
+        try:
+            session_factory.configure(bind=new_engine)
+        except Exception:
+            # Fall back to replacing the factory if it cannot be reconfigured.
+            setattr(module, "Session", sessionmaker(bind=new_engine))
 
 
 def _ensure_engine_current(force_reconnect: bool = False) -> None:
@@ -39,6 +75,7 @@ def _ensure_engine_current(force_reconnect: bool = False) -> None:
     new_engine = create_engine(expected_url)
     db_engine = new_engine
     Session.configure(bind=new_engine)
+    _rebind_loaded_sessionmakers(new_engine)
 
 
 def _create_outside_source_account(session):
