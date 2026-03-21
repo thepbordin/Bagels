@@ -152,7 +152,7 @@ None identified
 | 2 | Fix AttributeError CONFIG is None when --at flag used | 2026-03-17 | 1da59b5 | [2-fix-attributeerror-config-is-none-when-g](./quick/2-fix-attributeerror-config-is-none-when-g/) |
 | 3 | Fix AttributeError — null category crashes record table | 2026-03-19 | 54e4083 | [3-fix-attributeerror-config-is-none-when-r](./quick/3-fix-attributeerror-config-is-none-when-r/) |
 | 4 | Fix VisualError — account.description None in AccountMode.rebuild() | 2026-03-19 | 7075e7b | [4-fix-visualerror-account-description-none](./quick/4-fix-visualerror-account-description-none/) |
-| 260321-s6x | Fix OperationalError `no such column: account.slug` when using `--at ./instance` | 2026-03-21 | N/A | [260321-s6x-fix-no-such-column-account-slug-when-run](./quick/260321-s6x-fix-no-such-column-account-slug-when-run/) |
+| 260321-s6x | Fix OperationalError `no such column: account.slug` when using `--at ./instance` | 2026-03-21 | 2139097 | [260321-s6x-fix-no-such-column-account-slug-when-run](./quick/260321-s6x-fix-no-such-column-account-slug-when-run/) |
 
 ### Todos
 
