@@ -32,6 +32,7 @@ class Record(Base):
     date = Column(DateTime, nullable=False, default=datetime.now)
     accountId = Column(Integer, ForeignKey("account.id"), nullable=False)
     categoryId = Column(Integer, ForeignKey("category.id"), nullable=True)
+    personId = Column(Integer, ForeignKey("person.id"), nullable=True)
 
     tags = Column(String, nullable=True)  # unimplemented
     isInProgress = Column(Boolean, nullable=False, default=False)  # unimplemented
@@ -51,6 +52,7 @@ class Record(Base):
         "Account", foreign_keys=[accountId], back_populates="records"
     )
     category = relationship("Category", back_populates="records")
+    person = relationship("Person")
     transferToAccount = relationship(
         "Account",
         foreign_keys=[transferToAccountId],

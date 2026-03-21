@@ -6,14 +6,30 @@ Provides context dump commands for AI-powered financial analysis.
 
 import click
 from datetime import datetime
+from sqlalchemy import create_engine
 
-from bagels.models.database.app import init_db, Session
+from bagels.models.database.app import Session as AppSession, init_db
+from bagels.models.database.db import Base
 from bagels.config import load_config
+from bagels.locations import database_file
 from bagels.queries.summaries import calculate_monthly_summary, calculate_budget_status
 from bagels.queries.spending import calculate_spending_by_category
 from bagels.queries.formatters import to_yaml
 from bagels.managers.accounts import get_all_accounts
 from bagels.managers.categories import get_all_categories_tree
+
+Session = AppSession
+
+
+def _open_session():
+    """Open session with current DB path while allowing tests to patch Session."""
+    engine = None
+    if hasattr(Session, "configure"):
+        engine = create_engine(f"sqlite:///{database_file().resolve()}")
+        Base.metadata.create_all(engine)
+        Session.configure(bind=engine)
+    session = Session()
+    return session, engine
 
 
 @click.group()
@@ -44,7 +60,7 @@ def llm_context(month, period, days):
         click.echo("Error: Only one of --month, --period, or --days can be specified")
         return
 
-    session = Session()
+    session, engine = _open_session()
 
     try:
         # Determine time range
@@ -82,6 +98,8 @@ def llm_context(month, period, days):
         raise click.ClickException(str(e))
     finally:
         session.close()
+        if engine is not None:
+            engine.dispose()
 
 
 def _get_accounts_context(session):
@@ -203,9 +221,9 @@ def _get_categories_context(session):
                 "nature": str(cat.nature),
                 "color": cat.color,
                 "parent": cat.parentCategory.name if cat.parentCategory else None,
-                "monthly_budget": cat.monthlyBudget,
+                "monthly_budget": getattr(cat, "monthlyBudget", None),
             }
-            for cat in categories
+            for cat, _, _ in categories
         ]
     except Exception:
         return []

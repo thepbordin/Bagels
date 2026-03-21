@@ -149,11 +149,12 @@ def sample_db_with_records():
     records = []
     for month_offset in range(3):
         for day in range(1, 28, 3):  # Every 3 days
-            record_date = base_date - timedelta(days=month_offset * 30 + (30 - day))
+            # Include current month data (month_offset=0), then roll backward.
+            record_date = base_date + timedelta(days=day - 1 - (month_offset * 30))
 
             # Alternate between different categories and accounts
             if day % 9 == 1:
-                # Groceries
+                # Groceries records for category filter tests.
                 record = Record(
                     label=f"Groceries - Day {day}",
                     amount=50.0 + (day % 5) * 10,
@@ -198,6 +199,19 @@ def sample_db_with_records():
                 )
 
             records.append(record)
+
+    # Ensure root "Food" category also has at least one record.
+    records.append(
+        Record(
+            label="Food Root Record",
+            amount=60.0,
+            date=base_date + timedelta(days=2),
+            accountId=savings.id,
+            categoryId=food.id,
+            isIncome=False,
+            isTransfer=False,
+        )
+    )
 
     session.add_all(records)
     session.commit()

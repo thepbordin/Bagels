@@ -9,9 +9,11 @@ import click
 from datetime import datetime
 from pathlib import Path
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn
+from sqlalchemy import create_engine
 from sqlalchemy.orm import joinedload
 
-from bagels.models.database.app import Session
+from bagels.locations import database_file
+from bagels.models.database.app import Session as AppSession, init_db
 from bagels.models.record import Record
 from bagels.models.account import Account
 from bagels.models.category import Category
@@ -25,6 +27,18 @@ from bagels.queries.filters import (
     apply_person_filter,
 )
 from bagels.export.slug_generator import generate_record_slug
+
+Session = AppSession
+
+
+def _open_session():
+    """Open session with current DB path while allowing tests to patch Session."""
+    engine = None
+    if hasattr(Session, "configure"):
+        engine = create_engine(f"sqlite:///{database_file().resolve()}")
+        Session.configure(bind=engine)
+    session = Session()
+    return session, engine
 
 
 @click.group()
@@ -59,7 +73,12 @@ def list_records(
     all,
 ):
     """List records with optional filters."""
-    session = Session()
+    from bagels.config import load_config
+
+    load_config()
+    init_db()
+
+    session, engine = _open_session()
     try:
         # Build query with eager loading
         query = (
@@ -111,6 +130,8 @@ def list_records(
 
     finally:
         session.close()
+        if engine is not None:
+            engine.dispose()
 
 
 @records.command("show")
@@ -120,7 +141,12 @@ def list_records(
 )
 def show_record(record_id, format):
     """Show details for a single record."""
-    session = Session()
+    from bagels.config import load_config
+
+    load_config()
+    init_db()
+
+    session, engine = _open_session()
     try:
         # Try to parse as integer ID first, then as slug
         try:
@@ -157,6 +183,8 @@ def show_record(record_id, format):
 
     finally:
         session.close()
+        if engine is not None:
+            engine.dispose()
 
 
 @records.command("add")
@@ -165,6 +193,11 @@ def show_record(record_id, format):
 )
 def add_record(from_yaml):
     """Add records (batch import from YAML)."""
+    from bagels.config import load_config
+
+    load_config()
+    init_db()
+
     if not from_yaml:
         raise click.ClickException(
             "Please provide --from-yaml option with a YAML file path"
@@ -202,7 +235,7 @@ def add_record(from_yaml):
         return
 
     # Validate and import records
-    session = Session()
+    session, engine = _open_session()
     try:
         with Progress(
             SpinnerColumn(),
@@ -426,3 +459,5 @@ def add_record(from_yaml):
 
     finally:
         session.close()
+        if engine is not None:
+            engine.dispose()

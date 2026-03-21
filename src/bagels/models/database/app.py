@@ -20,6 +20,27 @@ db_engine = create_engine(f"sqlite:///{database_file().resolve()}")
 Session = sessionmaker(bind=db_engine)
 
 
+def _ensure_engine_current(force_reconnect: bool = False) -> None:
+    """Rebind global engine/sessionmaker when custom root changes."""
+    global db_engine
+
+    current_db_path = database_file().resolve()
+    current_url = str(db_engine.url)
+    expected_url = f"sqlite:///{current_db_path}"
+
+    if not force_reconnect and current_url == expected_url:
+        return
+
+    try:
+        db_engine.dispose()
+    except Exception:
+        pass
+
+    new_engine = create_engine(expected_url)
+    db_engine = new_engine
+    Session.configure(bind=new_engine)
+
+
 def _create_outside_source_account(session):
     outside_account = session.query(Account).filter_by(name="Outside source").first()
     if not outside_account:
@@ -88,6 +109,7 @@ def _fix_dangling_categories(session):
 
 def _sync_database_schema():
     try:
+        _ensure_engine_current()
         inspector = inspect(db_engine)
         existing_tables = inspector.get_table_names()
 
@@ -116,6 +138,8 @@ def _sync_database_schema():
 
 
 def init_db():
+    # Reconnect on every init to avoid stale handles to temp DBs removed by tests.
+    _ensure_engine_current(force_reconnect=True)
     _sync_database_schema()
     Base.metadata.create_all(db_engine)
     session = Session()
@@ -126,6 +150,7 @@ def init_db():
 
 
 def wipe_database():
+    _ensure_engine_current(force_reconnect=True)
     Base.metadata.drop_all(db_engine)
     _sync_database_schema()
     Base.metadata.create_all(db_engine)

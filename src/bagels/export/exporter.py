@@ -32,11 +32,7 @@ def _generate_account_slug(account: Account, session: Session = None) -> str:
     Returns:
         Slug string for the account
     """
-    if hasattr(account, "slug") and account.slug:
-        return account.slug
-
-    # For now, use ID as fallback since slug is nullable
-    # This will be improved when we implement proper slug generation
+    # Backward compatibility: account export keys are acc_<id>.
     return f"acc_{account.id}"
 
 
@@ -142,6 +138,11 @@ def export_all_accounts(session: Session, output_dir: Path) -> Path:
     Returns:
         Path to the created accounts.yaml file
     """
+    return export_accounts(session, output_dir)
+
+
+def export_accounts_to_yaml(session: Session, output_dir: Path) -> Path:
+    """Backward-compatible alias."""
     return export_accounts(session, output_dir)
 
 
@@ -290,6 +291,11 @@ def export_all_categories(session: Session, output_dir: Path) -> Path:
     return output_path
 
 
+def export_categories_to_yaml(session: Session, output_dir: Path) -> Path:
+    """Backward-compatible alias."""
+    return export_categories(session, output_dir)
+
+
 def export_person_to_yaml(person: Person, output_dir: Path) -> Path:
     """
     Export a single person to YAML file (for testing).
@@ -335,6 +341,11 @@ def export_all_persons(session: Session, output_dir: Path) -> Path:
     Returns:
         Path to the created persons.yaml file
     """
+    return export_persons(session, output_dir)
+
+
+def export_persons_to_yaml(session: Session, output_dir: Path) -> Path:
+    """Backward-compatible alias."""
     return export_persons(session, output_dir)
 
 
@@ -408,6 +419,13 @@ def export_template_to_yaml(template: RecordTemplate, output_dir: Path) -> Path:
             "personSlug": None,
             "isIncome": template.isIncome,
             "isTransfer": template.isTransfer,
+            "transferToAccountSlug": template.transferToAccount.slug
+            if template.transferToAccount
+            and hasattr(template.transferToAccount, "slug")
+            and template.transferToAccount.slug
+            else f"acc_{template.transferToAccountId}"
+            if template.transferToAccount
+            else None,
             "order": template.order,
             "createdAt": template.createdAt.isoformat(),
             "updatedAt": template.updatedAt.isoformat(),
@@ -478,6 +496,13 @@ def export_templates(session: Session, output_dir: Path) -> Path:
             "personSlug": None,  # Template doesn't have person relationship
             "isIncome": template.isIncome,
             "isTransfer": template.isTransfer,
+            "transferToAccountSlug": template.transferToAccount.slug
+            if template.transferToAccount
+            and hasattr(template.transferToAccount, "slug")
+            and template.transferToAccount.slug
+            else f"acc_{template.transferToAccountId}"
+            if template.transferToAccount
+            else None,
             "order": template.order,
             "createdAt": template.createdAt.isoformat(),
             "updatedAt": template.updatedAt.isoformat(),
@@ -635,7 +660,14 @@ def export_records_by_month(session: Session, output_dir: Path) -> Path:
                 else f"cat_{record.categoryId}"
                 if record.category
                 else None,
-                "personSlug": None,
+                "personSlug": (
+                    record.person.slug
+                    if getattr(record, "person", None)
+                    and getattr(record.person, "slug", None)
+                    else f"person_{record.personId}"
+                    if getattr(record, "personId", None)
+                    else None
+                ),
                 "isIncome": record.isIncome,
                 "isTransfer": record.isTransfer,
                 "transferToAccountSlug": record.transferToAccount.slug
@@ -664,3 +696,8 @@ def export_records_by_month(session: Session, output_dir: Path) -> Path:
             )
 
     return records_dir
+
+
+def export_templates_to_yaml(session: Session, output_dir: Path) -> Path:
+    """Backward-compatible alias."""
+    return export_templates(session, output_dir)

@@ -7,10 +7,24 @@ including income, expenses, and net savings for a specified month.
 
 import click
 from datetime import datetime
+from sqlalchemy import create_engine
 
-from bagels.models.database.app import init_db, Session
+from bagels.locations import database_file
+from bagels.models.database.app import Session as AppSession, init_db
 from bagels.queries.summaries import calculate_monthly_summary
 from bagels.queries.formatters import format_summary
+
+Session = AppSession
+
+
+def _open_session():
+    """Open session with current DB path while allowing tests to patch Session."""
+    engine = None
+    if hasattr(Session, "configure"):
+        engine = create_engine(f"sqlite:///{database_file().resolve()}")
+        Session.configure(bind=engine)
+    session = Session()
+    return session, engine
 
 
 @click.command()
@@ -32,8 +46,8 @@ def summary(month: str | None, format: str):
     # Initialize database
     init_db()
 
-    # Create session
-    session = Session()
+    # Create session bound to the active database path.
+    session, engine = _open_session()
     try:
         # Handle current month default
         if month is None:
@@ -56,3 +70,5 @@ def summary(month: str | None, format: str):
         raise click.ClickException(str(e))
     finally:
         session.close()
+        if engine is not None:
+            engine.dispose()

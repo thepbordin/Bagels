@@ -152,26 +152,58 @@ def _get_base_accounts_query(get_hidden=False):
     return stmt
 
 
-def get_all_accounts(get_hidden=False):
-    session = Session()
+def get_all_accounts(session=None, get_hidden=False):
+    # Backward compatibility: get_all_accounts(get_hidden=True)
+    if isinstance(session, bool) and get_hidden is False:
+        get_hidden = session
+        session = None
+
+    if session is None:
+        session = Session()
+        should_close = True
+    else:
+        should_close = False
+
     try:
         stmt = _get_base_accounts_query(get_hidden)
         return session.scalars(stmt).all()
     finally:
-        session.close()
+        if should_close:
+            session.close()
 
 
-def get_accounts_count(get_hidden=False):
-    session = Session()
+def get_accounts_count(session=None, get_hidden=False):
+    # Backward compatibility: get_accounts_count(get_hidden=True)
+    if isinstance(session, bool) and get_hidden is False:
+        get_hidden = session
+        session = None
+
+    if session is None:
+        session = Session()
+        should_close = True
+    else:
+        should_close = False
+
     try:
         stmt = _get_base_accounts_query(get_hidden)
         return len(session.scalars(stmt).all())
     finally:
-        session.close()
+        if should_close:
+            session.close()
 
 
-def get_all_accounts_with_balance(get_hidden=False):
-    session = Session()
+def get_all_accounts_with_balance(session=None, get_hidden=False):
+    # Backward compatibility: get_all_accounts_with_balance(get_hidden=True)
+    if isinstance(session, bool) and get_hidden is False:
+        get_hidden = session
+        session = None
+
+    if session is None:
+        session = Session()
+        should_close = True
+    else:
+        should_close = False
+
     try:
         stmt = _get_base_accounts_query(get_hidden)
         accounts = session.scalars(stmt).all()
@@ -179,7 +211,8 @@ def get_all_accounts_with_balance(get_hidden=False):
             account.balance = get_account_balance(account.id, session)
         return accounts
     finally:
-        session.close()
+        if should_close:
+            session.close()
 
 
 def get_account_balance_by_id(account_id):

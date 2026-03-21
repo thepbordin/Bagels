@@ -38,7 +38,7 @@ class TestAccountsValidation:
                 "repaymentDate": None,
                 "hidden": False,
                 "createdAt": "2026-03-14T10:30:00",
-                "updatedAt": "2026-03-14T10:30:00"
+                "updatedAt": "2026-03-14T10:30:00",
             }
         }
 
@@ -62,7 +62,7 @@ class TestAccountsValidation:
             "acc_savings": {
                 "description": "Emergency fund",
                 "beginningBalance": 1000.0,
-                "hidden": False
+                "hidden": False,
             }
         }
 
@@ -90,14 +90,17 @@ class TestAccountsValidation:
                 "beginningBalance": 1000.0,
                 "hidden": False,
                 "createdAt": "invalid-timestamp",
-                "updatedAt": "2026-03-14T10:30:00"
+                "updatedAt": "2026-03-14T10:30:00",
             }
         }
 
         is_valid, errors = validate_accounts_yaml(yaml_data)
 
         assert is_valid is False
-        assert any("timestamp" in str(error).lower() or "format" in str(error).lower() for error in errors)
+        assert any(
+            "timestamp" in str(error).lower() or "format" in str(error).lower()
+            for error in errors
+        )
 
 
 class TestRecordsValidation:
@@ -124,14 +127,17 @@ class TestRecordsValidation:
                 "isIncome": False,
                 "isTransfer": False,
                 "createdAt": "2026-03-14T10:30:00",
-                "updatedAt": "2026-03-14T10:30:00"
+                "updatedAt": "2026-03-14T10:30:00",
             }
         }
 
         is_valid, errors = validate_records_yaml(yaml_data, in_memory_db)
 
         assert is_valid is False
-        assert any("account" in str(error).lower() and "acc_missing" in str(error) for error in errors)
+        assert any(
+            "account" in str(error).lower() and "acc_missing" in str(error)
+            for error in errors
+        )
 
     def test_validate_monetary_value_format(self, in_memory_db, sample_account):
         """
@@ -154,14 +160,17 @@ class TestRecordsValidation:
                 "isIncome": False,
                 "isTransfer": False,
                 "createdAt": "2026-03-14T10:30:00",
-                "updatedAt": "2026-03-14T10:30:00"
+                "updatedAt": "2026-03-14T10:30:00",
             }
         }
 
         is_valid, errors = validate_records_yaml(yaml_data, in_memory_db)
 
         assert is_valid is False
-        assert any("amount" in str(error).lower() and "number" in str(error).lower() for error in errors)
+        assert any(
+            "amount" in str(error).lower() and "number" in str(error).lower()
+            for error in errors
+        )
 
     def test_validate_slug_format(self, in_memory_db, sample_account):
         """
@@ -184,14 +193,17 @@ class TestRecordsValidation:
                 "isIncome": False,
                 "isTransfer": False,
                 "createdAt": "2026-03-14T10:30:00",
-                "updatedAt": "2026-03-14T10:30:00"
+                "updatedAt": "2026-03-14T10:30:00",
             }
         }
 
         is_valid, errors = validate_records_yaml(yaml_data, in_memory_db)
 
         assert is_valid is False
-        assert any("slug" in str(error).lower() and "format" in str(error).lower() for error in errors)
+        assert any(
+            "slug" in str(error).lower() and "format" in str(error).lower()
+            for error in errors
+        )
 
 
 class TestCategoriesValidation:
@@ -214,7 +226,7 @@ class TestCategoriesValidation:
                 "nature": "expense",
                 "color": "#FF5733",
                 "createdAt": "2026-03-14T10:30:00",
-                "updatedAt": "2026-03-14T10:30:00"
+                "updatedAt": "2026-03-14T10:30:00",
             }
         }
 
@@ -240,14 +252,17 @@ class TestCategoriesValidation:
                 "nature": "expense",
                 "color": "#FF5733",
                 "createdAt": "2026-03-14T10:30:00",
-                "updatedAt": "2026-03-14T10:30:00"
+                "updatedAt": "2026-03-14T10:30:00",
             }
         }
 
         is_valid, errors = validate_categories_yaml(yaml_data, in_memory_db)
 
         assert is_valid is False
-        assert any("parent" in str(error).lower() or "cat_missing" in str(error) for error in errors)
+        assert any(
+            "parent" in str(error).lower() or "cat_missing" in str(error)
+            for error in errors
+        )
 
 
 class TestPersonsValidation:
@@ -267,7 +282,7 @@ class TestPersonsValidation:
             "person_john_doe": {
                 "name": "John Doe",
                 "createdAt": "2026-03-14T10:30:00",
-                "updatedAt": "2026-03-14T10:30:00"
+                "updatedAt": "2026-03-14T10:30:00",
             }
         }
 
@@ -280,7 +295,9 @@ class TestPersonsValidation:
 class TestTemplatesValidation:
     """Test validation for record templates YAML data."""
 
-    def test_validate_template_structure(self, in_memory_db, sample_account, sample_category):
+    def test_validate_template_structure(
+        self, in_memory_db, sample_account, sample_category
+    ):
         """
         Test that valid templates YAML passes validation.
 
@@ -294,13 +311,13 @@ class TestTemplatesValidation:
             "tpl_monthly_rent": {
                 "label": "Monthly Rent",
                 "amount": 1500.0,
-                "accountSlug": "acc_savings",
-                "categorySlug": "cat_groceries",
+                "accountSlug": "acc_savings_extra",
+                "categorySlug": "cat_groceries_extra",
                 "personSlug": None,
                 "isIncome": False,
                 "ordinal": 0,
                 "createdAt": "2026-03-14T10:30:00",
-                "updatedAt": "2026-03-14T10:30:00"
+                "updatedAt": "2026-03-14T10:30:00",
             }
         }
 
@@ -308,8 +325,18 @@ class TestTemplatesValidation:
         from bagels.models.account import Account
         from bagels.models.category import Category
 
-        account = Account(slug="acc_savings", name="Savings", beginningBalance=1000.0, hidden=False)
-        category = Category(slug="cat_groceries", name="Groceries", nature="expense", color="#FF5733")
+        account = Account(
+            slug="acc_savings_extra",
+            name="Savings Extra",
+            beginningBalance=1000.0,
+            hidden=False,
+        )
+        category = Category(
+            slug="cat_groceries_extra",
+            name="Groceries Extra",
+            nature="expense",
+            color="#FF5733",
+        )
         in_memory_db.add(account)
         in_memory_db.add(category)
         in_memory_db.commit()
@@ -338,18 +365,18 @@ class TestValidationErrorReporting:
             "acc_1": {
                 "description": "Missing name",
                 "beginningBalance": 1000.0,
-                "hidden": False
+                "hidden": False,
             },
             "acc_2": {
                 "name": "Account 2",
                 "description": "Missing beginningBalance",
-                "hidden": False
+                "hidden": False,
             },
             "acc_3": {
                 "name": "Account 3",
                 "beginningBalance": "not-a-number",
-                "hidden": False
-            }
+                "hidden": False,
+            },
         }
 
         is_valid, errors = validate_accounts_yaml(yaml_data)

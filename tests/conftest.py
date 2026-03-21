@@ -14,14 +14,23 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime, timedelta
 from tempfile import mkdtemp
+import warnings
+import yaml
+import tempfile
+import shutil
 
-# Initialize config BEFORE importing models (they need CONFIG.defaults)
+# Set custom root to temp directory BEFORE importing config
+from bagels.locations import set_custom_root
+
+# Use a temporary directory for test isolation
+_test_temp_dir = tempfile.mkdtemp()
+set_custom_root(_test_temp_dir)
+
+# Now import config (will use temp directory)
 from bagels.config import Config, config_file
 import bagels.config as config_module
-import yaml
-import warnings
 
-# Create config file if needed
+# Create config file in temp directory
 if not config_file().exists():
     config_file().parent.mkdir(parents=True, exist_ok=True)
     with open(config_file(), "w") as f:
@@ -31,6 +40,17 @@ if not config_file().exists():
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     config_module.CONFIG = Config()
+
+
+# Clean up temp directory after all tests finish
+@pytest.fixture(scope="session", autouse=True)
+def cleanup_test_temp_dir():
+    """Clean up the test temp directory after all tests complete."""
+    yield
+    set_custom_root(None)  # Reset custom root
+    if Path(_test_temp_dir).exists():
+        shutil.rmtree(_test_temp_dir, ignore_errors=True)
+
 
 # Now import models (they need CONFIG to be set)
 from bagels.models.database.db import Base
@@ -43,6 +63,7 @@ from bagels.models.split import Split
 
 
 # ---------- Database Fixtures ---------- #
+
 
 @pytest.fixture(scope="function")
 def in_memory_db():
@@ -59,6 +80,7 @@ def in_memory_db():
     if config_module.CONFIG is None:
         with open(config_module.config_file(), "w") as f:
             import yaml
+
             yaml.dump(Config.get_default().model_dump(), f)
         config_module.load_config()
 
@@ -81,6 +103,7 @@ def in_memory_db():
 
 # ---------- Temporary Directory Fixtures ---------- #
 
+
 @pytest.fixture(scope="function")
 def temp_directory():
     """
@@ -96,6 +119,7 @@ def temp_directory():
 
 # ---------- Sample Data Fixtures ---------- #
 
+
 @pytest.fixture(scope="function")
 def sample_account(in_memory_db):
     """
@@ -109,7 +133,7 @@ def sample_account(in_memory_db):
         description="Emergency fund",
         beginningBalance=1000.0,
         repaymentDate=None,
-        hidden=False
+        hidden=False,
     )
     in_memory_db.add(account)
     in_memory_db.commit()
@@ -127,10 +151,7 @@ def sample_category(in_memory_db):
     from bagels.models.category import Nature
 
     category = Category(
-        name="Groceries",
-        parentCategoryId=None,
-        nature=Nature.NEED,
-        color="#FF5733"
+        name="Groceries", parentCategoryId=None, nature=Nature.NEED, color="#FF5733"
     )
     in_memory_db.add(category)
     in_memory_db.commit()
@@ -166,7 +187,7 @@ def sample_template(in_memory_db, sample_account, sample_category):
         categoryId=sample_category.id,
         personId=None,
         isIncome=False,
-        ordinal=0
+        ordinal=0,
     )
     in_memory_db.add(template)
     in_memory_db.commit()
@@ -186,13 +207,13 @@ def sample_records(in_memory_db, sample_account, sample_category):
 
     for i in range(5):
         record = Record(
-            label=f"Test Record {i+1}",
+            label=f"Test Record {i + 1}",
             amount=100.0 * (i + 1),
             date=base_date + timedelta(days=i),
             accountId=sample_account.id,
             categoryId=sample_category.id,
             isIncome=False,
-            isTransfer=False
+            isTransfer=False,
         )
         in_memory_db.add(record)
         records.append(record)
@@ -213,10 +234,7 @@ def sample_category_tree(in_memory_db):
 
     # Parent category
     parent = Category(
-        name="Food",
-        parentCategoryId=None,
-        nature=Nature.NEED,
-        color="#FF5733"
+        name="Food", parentCategoryId=None, nature=Nature.NEED, color="#FF5733"
     )
     in_memory_db.add(parent)
     in_memory_db.flush()  # Get the ID without committing
@@ -226,7 +244,7 @@ def sample_category_tree(in_memory_db):
         name="Groceries",
         parentCategoryId=parent.id,
         nature=Nature.NEED,
-        color="#FF5733"
+        color="#FF5733",
     )
     in_memory_db.add(child)
 
@@ -235,20 +253,17 @@ def sample_category_tree(in_memory_db):
         name="Weekly Groceries",
         parentCategoryId=child.id,
         nature=Nature.NEED,
-        color="#FF5733"
+        color="#FF5733",
     )
     in_memory_db.add(grandchild)
 
     in_memory_db.commit()
 
-    return {
-        "parent": parent,
-        "child": child,
-        "grandchild": grandchild
-    }
+    return {"parent": parent, "child": child, "grandchild": grandchild}
 
 
 # ---------- YAML Helper Fixtures ---------- #
+
 
 @pytest.fixture(scope="function")
 def yaml_file(temp_directory):
@@ -258,6 +273,7 @@ def yaml_file(temp_directory):
     Returns:
         callable: Function that writes YAML data and returns file path
     """
+
     def _create_yaml(filename, data):
         """
         Create a YAML file with the given data.
@@ -272,7 +288,7 @@ def yaml_file(temp_directory):
         import yaml
 
         file_path = temp_directory / filename
-        with open(file_path, 'w') as f:
+        with open(file_path, "w") as f:
             yaml.safe_dump(data, f, default_flow_style=False, allow_unicode=True)
 
         return file_path
@@ -297,7 +313,7 @@ def sample_yaml_data():
                 "repaymentDate": None,
                 "hidden": False,
                 "createdAt": "2026-03-14T10:30:00",
-                "updatedAt": "2026-03-14T10:30:00"
+                "updatedAt": "2026-03-14T10:30:00",
             }
         },
         "categories": {
@@ -307,14 +323,14 @@ def sample_yaml_data():
                 "nature": "expense",
                 "color": "#FF5733",
                 "createdAt": "2026-03-14T10:30:00",
-                "updatedAt": "2026-03-14T10:30:00"
+                "updatedAt": "2026-03-14T10:30:00",
             }
         },
         "persons": {
             "person_john_doe": {
                 "name": "John Doe",
                 "createdAt": "2026-03-14T10:30:00",
-                "updatedAt": "2026-03-14T10:30:00"
+                "updatedAt": "2026-03-14T10:30:00",
             }
-        }
+        },
     }
