@@ -2,20 +2,20 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 06
+current_phase: 07
 status: unknown
-last_updated: "2026-03-22T08:04:07.165Z"
+last_updated: "2026-03-22T17:16:23.844Z"
 progress:
-  total_phases: 7
+  total_phases: 8
   completed_phases: 6
-  total_plans: 26
-  completed_plans: 26
+  total_plans: 30
+  completed_plans: 27
 ---
 
 # State: Bagels v1
 
 **Last Updated:** 2026-03-21
-**Current Phase:** 06
+**Current Phase:** 07
 **Overall Progress:** 25/25 plans complete (100%)
 
 ## Project Reference
@@ -39,8 +39,8 @@ Deliver a reliable SQLite-first personal finance workflow with:
 
 ## Current Position
 
-Phase: 06 (skill-md-for-llm-cli-usage-documentation) — EXECUTING
-Plan: 1 of 1
+Phase: 07 (add-full-crud-operation-each-entities-for-cli) — EXECUTING
+Plan: 1 of 4
 
 ### Phase 2 Status
 
@@ -76,6 +76,7 @@ Plan: 1 of 1
 - Phase 04.1 inserted after Phase 4: fix test errors try to run uv run pytest investigate & FIX (URGENT)
 - Phase 5 added: Requirement Reduction, remove buggy git and yaml loader
 - Phase 6 added: SKILL.md for llm cli usage documentation
+- Phase 7 added: add full CRUD operation each entities for CLI
 
 ### Key Decisions
 
@@ -108,6 +109,7 @@ Plan: 1 of 1
 | Phase 04-verification P02 | 525152 | 1 tasks | 2 files |
 | Phase 04-verification P04 | 18 | 2 tasks | 5 files |
 | Phase 06-skill-md-for-llm-cli-usage-documentation P01 | 1 | 2 tasks | 1 files |
+| Phase 07-add-full-crud-operation-each-entities-for-cli P01 | 135 | 3 tasks | 4 files |
 
 ### Technical Context
 
