@@ -133,6 +133,7 @@ Plans:
 | 4. Verification | 4/4 | Complete    | 2026-03-19 |
 | 5. Requirement Reduction | 3/3 | Complete | 2026-03-21 |
 | 6. SKILL.md Documentation | 0/1 | Planned | - |
+| 7. CLI CRUD Operations | 0/4 | Planned | - |
 
 ## Coverage
 
@@ -153,6 +154,7 @@ Plans:
 | CLI Commands | 3 | Phase 1 (3) |
 | Testing | 5 | Phase 4 (5) |
 | LLM CLI Documentation | 3 | Phase 6 (3) |
+| CLI CRUD Operations | 9 | Phase 7 (9) |
 
 **Traceability:** Full mapping maintained in REQUIREMENTS.md
 
@@ -178,6 +180,19 @@ Plans:
 Plans:
 - [ ] 06-01-PLAN.md — Write complete SKILL.md with CLI command reference, flag tables, examples, and four LLM workflow patterns
 
+### Phase 7: Add Full CRUD Operations for Each Entity via CLI
+
+**Goal:** Expose create, show, update, and delete CLI commands for all 5 entities (accounts, categories, persons, records, templates) with consistent patterns, interactive prompts, and delete safeguards.
+**Requirements**: CRUD-01, CRUD-02, CRUD-03, CRUD-04, CRUD-05, CRUD-06, CRUD-07, CRUD-08, CRUD-09
+**Depends on:** Phase 6
+**Plans:** 4 plans
+
+Plans:
+- [ ] 07-01-PLAN.md — Shared CLI helpers, formatter extensions, and full CRUD for accounts + persons
+- [ ] 07-02-PLAN.md — Full CRUD for categories + templates with FK validation
+- [ ] 07-03-PLAN.md — Inline record creation, update, and delete commands
+- [ ] 07-04-PLAN.md — SKILL.md CRUD documentation update and smoke tests
+
 ---
 *Roadmap created: 2026-03-14*
 *Plans created for Phase 1: 2026-03-14*
@@ -187,6 +202,7 @@ Plans:
 *Plans created for Phase 4: 2026-03-19*
 *Plans created for Phase 5: 2026-03-21*
 *Plans created for Phase 6: 2026-03-22*
+*Plans created for Phase 7: 2026-03-22*
 
 ### Phase 04.1: fix test errors try to run uv run pytest investigate & FIX (INSERTED)
 
