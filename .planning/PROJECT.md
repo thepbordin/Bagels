@@ -36,7 +36,13 @@ Bagels is a **Python terminal expense tracker** built on Textual TUI with SQLite
 
 ### Active
 
-- [ ] **Automated Git sync** — Auto-commit and auto-push on data changes with conflict resolution
+- (None — all v1 milestone requirements addressed)
+
+### Validated (Phase 5-7)
+
+- ✓ **SQLite-only runtime** — Removed buggy Git/YAML sync; SQLite is sole runtime storage — Phase 5
+- ✓ **LLM CLI documentation** — SKILL.md at repo root with full command reference and workflow patterns — Phase 6
+- ✓ **Full CRUD CLI for all entities** — accounts, categories, persons, records, templates all have list/show/add/update/delete via CLI with --format/-f, --force, --cascade — Phase 7
 
 ### Out of Scope
 
@@ -80,4 +86,4 @@ Transform from opaque binary database to transparent, version-controlled YAML fi
 | **Shared query infrastructure** | Centralized formatting/filtering for consistency across all commands | ✓ Implemented in Phase 2 |
 
 ---
-*Last updated: 2026-03-15 after Phase 2 (CLI Query Layer)*
+*Last updated: 2026-03-23 after Phase 7 (Full CRUD CLI for all entities)*
