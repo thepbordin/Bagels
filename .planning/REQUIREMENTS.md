@@ -122,6 +122,18 @@
 - [x] **DOC-02**: All current CLI commands documented with exact flag names, types, and one example each
 - [x] **DOC-03**: Four named LLM workflow patterns with copy-pasteable shell commands
 
+## CLI CRUD Mutations (Phase 7)
+
+- [ ] **CRUD-01**: `bagels accounts add/show/update/delete IDENTIFIER` commands with --force and --cascade flags
+- [ ] **CRUD-02**: `bagels categories add/list/show/update/delete IDENTIFIER` commands with --force and --cascade flags
+- [ ] **CRUD-03**: `bagels persons list/add/show/update/delete IDENTIFIER` commands registered as new top-level group
+- [ ] **CRUD-04**: `bagels templates list/add/show/update/delete IDENTIFIER` commands registered as new top-level group
+- [ ] **CRUD-05**: `bagels records add` supports inline flag-based single record creation (--label, --amount, --date, --account-id) in addition to batch --yaml import
+- [ ] **CRUD-06**: `bagels records update/delete IDENTIFIER` commands with --force on delete
+- [ ] **CRUD-07**: All CRUD create/update commands support --format/-f (table/json/yaml) and echo the affected entity
+- [ ] **CRUD-08**: Delete commands show confirmation prompt by default; --force skips prompt; --cascade soft-deletes linked records (hard delete for records, which is an intentional exception)
+- [ ] **CRUD-09**: IDENTIFIER argument on update/show/delete accepts integer ID or slug string
+
 ## Out of Scope
 
 | Feature | Reason |
@@ -193,12 +205,21 @@
 | DOC-01 | Phase 6 | Planned |
 | DOC-02 | Phase 6 | Planned |
 | DOC-03 | Phase 6 | Planned |
+| CRUD-01 | Phase 7 | Planned |
+| CRUD-02 | Phase 7 | Planned |
+| CRUD-03 | Phase 7 | Planned |
+| CRUD-04 | Phase 7 | Planned |
+| CRUD-05 | Phase 7 | Planned |
+| CRUD-06 | Phase 7 | Planned |
+| CRUD-07 | Phase 7 | Planned |
+| CRUD-08 | Phase 7 | Planned |
+| CRUD-09 | Phase 7 | Planned |
 
 **Coverage:**
-- Total tracked requirements (including reduction and documentation): 60
-- Mapped to phases: 60 (100%)
+- Total tracked requirements (including reduction, documentation, and CRUD mutations): 69
+- Mapped to phases: 69 (100%)
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-14*
-*Last updated: 2026-03-22 for Phase 6 LLM CLI documentation*
+*Last updated: 2026-03-22 for Phase 7 CLI CRUD mutations*
