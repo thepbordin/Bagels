@@ -19,6 +19,8 @@ from rich.console import Console
 from bagels.models.record import Record
 from bagels.models.account import Account
 from bagels.models.category import Category
+from bagels.models.person import Person
+from bagels.models.record_template import RecordTemplate
 
 
 console = Console()
@@ -232,3 +234,105 @@ def _category_to_dict(category: Category) -> dict[str, Any]:
             "name": category.parentCategory.name,
         }
     return result
+
+
+def format_persons(persons: list[Person], output_format: str = "table") -> str:
+    """Format persons list as table, JSON, or YAML."""
+    if not persons:
+        return "No persons found."
+
+    if output_format == "json":
+        return to_json([_person_to_dict(p) for p in persons])
+    elif output_format == "yaml":
+        return to_yaml([_person_to_dict(p) for p in persons])
+    else:  # table
+        table = Table(title="Persons", show_header=True, header_style="bold magenta")
+        table.add_column("ID", style="cyan", width=8)
+        table.add_column("Name", style="white", width=25)
+        table.add_column("Slug", style="green", width=25)
+
+        for person in persons:
+            table.add_row(str(person.id), person.name or "", person.slug or "")
+
+        with console.capture() as capture:
+            console.print(table)
+        return capture.get()
+
+
+def format_templates(
+    templates: list[RecordTemplate], output_format: str = "table"
+) -> str:
+    """Format record templates list as table, JSON, or YAML."""
+    if not templates:
+        return "No templates found."
+
+    if output_format == "json":
+        return to_json([_template_to_dict(t) for t in templates])
+    elif output_format == "yaml":
+        return to_yaml([_template_to_dict(t) for t in templates])
+    else:  # table
+        table = Table(
+            title="Record Templates", show_header=True, header_style="bold magenta"
+        )
+        table.add_column("ID", style="cyan", width=6)
+        table.add_column("Label", style="white", width=25)
+        table.add_column("Amount", justify="right", style="yellow", width=12)
+        table.add_column("Account", style="blue", width=20)
+        table.add_column("Category", style="magenta", width=20)
+        table.add_column("Income", style="green", width=8)
+        table.add_column("Transfer", style="red", width=10)
+
+        for template in templates:
+            amount_str = f"${template.amount:.2f}"
+            account_name = template.account.name if template.account else "None"
+            category_name = template.category.name if template.category else "None"
+            income_str = "Yes" if template.isIncome else "No"
+            transfer_str = "Yes" if template.isTransfer else "No"
+
+            table.add_row(
+                str(template.id),
+                template.label,
+                amount_str,
+                account_name,
+                category_name,
+                income_str,
+                transfer_str,
+            )
+
+        with console.capture() as capture:
+            console.print(table)
+        return capture.get()
+
+
+def _person_to_dict(person: Person) -> dict[str, Any]:
+    """Convert Person to dict."""
+    return {
+        "id": person.id,
+        "name": person.name,
+        "slug": person.slug,
+    }
+
+
+def _template_to_dict(template: RecordTemplate) -> dict[str, Any]:
+    """Convert RecordTemplate to dict with nested account and category objects."""
+    return {
+        "id": template.id,
+        "slug": template.slug,
+        "label": template.label,
+        "amount": template.amount,
+        "order": template.order,
+        "is_income": template.isIncome,
+        "is_transfer": template.isTransfer,
+        "account": {"id": template.account.id, "name": template.account.name}
+        if template.account
+        else None,
+        "category": {"id": template.category.id, "name": template.category.name}
+        if template.category
+        else None,
+        "transfer_to_account": {
+            "id": template.transferToAccount.id,
+            "name": template.transferToAccount.name,
+        }
+        if template.transferToAccount
+        else None,
+    }
