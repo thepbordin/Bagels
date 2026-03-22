@@ -1,7 +1,7 @@
 # Requirements: Bagels
 
 **Defined:** 2026-03-14
-**Core Value:** Expense data that lives outside proprietary formats — all financial data stored as human-readable, Git-tracked YAML files
+**Core Value:** Local-first expense tracking with SQLite as runtime source of truth and human-readable exports available for portability.
 
 ## v1 Requirements
 
@@ -13,19 +13,19 @@
 - [x] **DATA-04**: Export all templates to YAML format (`data/templates.yaml`)
 - [x] **DATA-05**: Export records grouped by month to YAML format (`data/records/YYYY-MM.yaml`)
 - [x] **DATA-06**: Import YAML files back into SQLite database
-- [x] **DATA-07**: Auto-export YAML on every record save/update/delete
-- [x] **DATA-08**: Auto-import YAML on application startup
+- [x] **DATA-07**: Auto-export YAML on every record save/update/delete (**superseded** in Phase 5 SQLite-only runtime)
+- [x] **DATA-08**: Auto-import YAML on application startup (**superseded** in Phase 5 SQLite-only runtime)
 
 ### Git Sync
 
-- [x] **GIT-01**: Initialize data directory as Git repository (`bagels git init`)
-- [x] **GIT-02**: Auto-commit YAML changes with descriptive messages
-- [x] **GIT-03**: Support `bagels git sync` command (commit + push)
-- [x] **GIT-04**: Support `bagels git pull` command (pull + reimport)
-- [x] **GIT-05**: Support `bagels git status` command (show uncommitted changes)
-- [x] **GIT-06**: Support `bagels git log` command (show recent history)
-- [x] **GIT-07**: Optional auto-push to remote (configurable)
-- [x] **GIT-08**: Pull remote changes on startup and import YAML
+- [x] **GIT-01**: Initialize data directory as Git repository (`bagels git init`) (**superseded** in Phase 5 SQLite-only runtime)
+- [x] **GIT-02**: Auto-commit YAML changes with descriptive messages (**superseded** in Phase 5 SQLite-only runtime)
+- [x] **GIT-03**: Support `bagels git sync` command (commit + push) (**superseded** in Phase 5 SQLite-only runtime)
+- [x] **GIT-04**: Support `bagels git pull` command (pull + reimport) (**superseded** in Phase 5 SQLite-only runtime)
+- [x] **GIT-05**: Support `bagels git status` command (show uncommitted changes) (**superseded** in Phase 5 SQLite-only runtime)
+- [x] **GIT-06**: Support `bagels git log` command (show recent history) (**superseded** in Phase 5 SQLite-only runtime)
+- [x] **GIT-07**: Optional auto-push to remote (configurable) (**superseded** in Phase 5 SQLite-only runtime)
+- [x] **GIT-08**: Pull remote changes on startup and import YAML (**superseded** in Phase 5 SQLite-only runtime)
 
 ### CLI Query Interface
 
@@ -66,9 +66,9 @@
 
 ### CLI Commands
 
-- [x] **CMD-01**: `bagels export` command for manual YAML export
-- [x] **CMD-02**: `bagels import` command for manual YAML import
-- [x] **CMD-03**: `bagels init` command initializes new data directory with Git repo
+- [x] **CMD-01**: `bagels export` command for manual YAML export (**superseded** in Phase 5 SQLite-only runtime)
+- [x] **CMD-02**: `bagels import` command for manual YAML import (**superseded** in Phase 5 SQLite-only runtime)
+- [x] **CMD-03**: `bagels init` command initializes local SQLite data directory and database
 
 ### Testing
 
@@ -109,6 +109,19 @@
 - **WEB-09**: Settings page with Git sync status
 - **WEB-10**: Mobile responsive design
 
+## Requirement Reduction (Phase 5)
+
+- [x] **REDUCE-01**: SQLite-only runtime is the supported default; runtime boot and CRUD flows must not perform background Git/YAML sync.
+- [x] **REDUCE-02**: Top-level sync commands (`bagels git`, `bagels export`, `bagels import`) are removed from CLI routing and return unknown-command behavior.
+- [x] **REDUCE-03**: Legacy sync config keys remain parseable but emit a one-time deprecation warning that Git/YAML sync was removed.
+- [x] **REDUCE-04**: Full project test gate (`uv run pytest`) passes after reduction changes without hiding failures via skip-only workarounds.
+
+## LLM CLI Documentation (Phase 6)
+
+- [ ] **DOC-01**: `SKILL.md` exists at repository root with complete CLI command reference
+- [ ] **DOC-02**: All current CLI commands documented with exact flag names, types, and one example each
+- [ ] **DOC-03**: Four named LLM workflow patterns with copy-pasteable shell commands
+
 ## Out of Scope
 
 | Feature | Reason |
@@ -130,16 +143,16 @@
 | DATA-04 | Phase 1 | Complete |
 | DATA-05 | Phase 1 | Complete |
 | DATA-06 | Phase 1 | Complete |
-| DATA-07 | Phase 3 | Complete |
-| DATA-08 | Phase 3 | Complete |
-| GIT-01 | Phase 1 | Complete |
-| GIT-02 | Phase 3 | Complete |
-| GIT-03 | Phase 3 | Complete |
-| GIT-04 | Phase 3 | Complete |
-| GIT-05 | Phase 3 | Complete |
-| GIT-06 | Phase 3 | Complete |
-| GIT-07 | Phase 3 | Complete |
-| GIT-08 | Phase 3 | Complete |
+| DATA-07 | Phase 3 | Superseded (Phase 5) |
+| DATA-08 | Phase 3 | Superseded (Phase 5) |
+| GIT-01 | Phase 1 | Superseded (Phase 5) |
+| GIT-02 | Phase 3 | Superseded (Phase 5) |
+| GIT-03 | Phase 3 | Superseded (Phase 5) |
+| GIT-04 | Phase 3 | Superseded (Phase 5) |
+| GIT-05 | Phase 3 | Superseded (Phase 5) |
+| GIT-06 | Phase 3 | Superseded (Phase 5) |
+| GIT-07 | Phase 3 | Superseded (Phase 5) |
+| GIT-08 | Phase 3 | Superseded (Phase 5) |
 | CLI-01 | Phase 2 | Complete |
 | CLI-02 | Phase 2 | Complete |
 | CLI-03 | Phase 2 | Complete |
@@ -165,20 +178,27 @@
 | CFG-03 | Phase 3 | Complete |
 | CFG-04 | Phase 3 | Complete |
 | CFG-05 | Phase 3 | Complete |
-| CMD-01 | Phase 1 | Complete |
-| CMD-02 | Phase 1 | Complete |
+| CMD-01 | Phase 1 | Superseded (Phase 5) |
+| CMD-02 | Phase 1 | Superseded (Phase 5) |
 | CMD-03 | Phase 1 | Complete |
 | TEST-01 | Phase 4 | Complete |
 | TEST-02 | Phase 4 | Complete |
 | TEST-03 | Phase 4 | Complete |
 | TEST-04 | Phase 4 | Complete |
 | TEST-05 | Phase 4 | Complete |
+| REDUCE-01 | Phase 5 | Complete |
+| REDUCE-02 | Phase 5 | Complete |
+| REDUCE-03 | Phase 5 | Complete |
+| REDUCE-04 | Phase 5 | Complete |
+| DOC-01 | Phase 6 | Planned |
+| DOC-02 | Phase 6 | Planned |
+| DOC-03 | Phase 6 | Planned |
 
 **Coverage:**
-- v1 requirements: 53 total
-- Mapped to phases: 53 (100%)
+- Total tracked requirements (including reduction and documentation): 60
+- Mapped to phases: 60 (100%)
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-14*
-*Last updated: 2026-03-14 after roadmap creation*
+*Last updated: 2026-03-22 for Phase 6 LLM CLI documentation*

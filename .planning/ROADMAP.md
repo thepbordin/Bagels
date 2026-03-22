@@ -3,7 +3,7 @@
 **Milestone:** Git-trackable, LLM-accessible expense tracker
 **Created:** 2026-03-14
 **Granularity:** Coarse
-**Phases:** 4
+**Phases:** 6
 
 ## Phases
 
@@ -11,6 +11,8 @@
 - [ ] **Phase 2: CLI Query Layer** - Query interface and LLM context commands
 - [x] **Phase 3: Automation** - Auto-export/import and Git auto-operations (completed 2026-03-15)
 - [x] **Phase 4: Verification** - Testing and validation (completed 2026-03-19)
+- [x] **Phase 5: Requirement Reduction** - Remove buggy Git/YAML runtime sync paths and stabilize SQLite-only behavior (completed 2026-03-21)
+- [ ] **Phase 6: SKILL.md for LLM CLI Usage Documentation** - Self-contained LLM reference for all Bagels CLI commands
 
 ## Phase Details
 
@@ -128,13 +130,15 @@ Plans:
 | 1. Foundation | 0/6 | Planning complete | - |
 | 2. CLI Query Layer | 2/8 | In Progress|  |
 | 3. Automation | 4/4 | Complete    | 2026-03-15 |
-| 4. Verification | 4/4 | Complete   | 2026-03-19 |
+| 4. Verification | 4/4 | Complete    | 2026-03-19 |
+| 5. Requirement Reduction | 3/3 | Complete | 2026-03-21 |
+| 6. SKILL.md Documentation | 0/1 | Planned | - |
 
 ## Coverage
 
 **Total v1 Requirements:** 52 (FMT-04 de-scoped)
 **Requirements Mapped:** 52 (100%)
-**Phases:** 4
+**Phases:** 6
 
 ### Requirement Mapping Summary
 
@@ -148,13 +152,48 @@ Plans:
 | Configuration | 5 | Phase 3 (5) |
 | CLI Commands | 3 | Phase 1 (3) |
 | Testing | 5 | Phase 4 (5) |
+| LLM CLI Documentation | 3 | Phase 6 (3) |
 
 **Traceability:** Full mapping maintained in REQUIREMENTS.md
+
+### Phase 5: Requirement Reduction, remove buggy git and yaml loader
+
+**Goal:** Remove buggy runtime Git/YAML sync behavior and rebaseline Bagels to SQLite-only operation with updated docs and tests.
+**Requirements**: REDUCE-01, REDUCE-02, REDUCE-03, REDUCE-04
+**Depends on:** Phase 4
+**Plans:** 3/3 plans complete
+
+Plans:
+- [x] 05-01-PLAN.md — Remove sync command registration, startup YAML sync path, and add one-time deprecation warning
+- [x] 05-02-PLAN.md — Remove manager export/commit hooks and retire sync-only CLI/git operations from runtime path
+- [x] 05-03-PLAN.md — Rebaseline requirements/roadmap docs, replace obsolete sync tests, and pass full pytest gate
+
+### Phase 6: SKILL.md for LLM CLI Usage Documentation
+
+**Goal:** Create a self-contained SKILL.md at the repository root that teaches any LLM how to use every Bagels CLI command with exact flags, examples, and workflow patterns.
+**Requirements**: DOC-01, DOC-02, DOC-03
+**Depends on:** Phase 5
+**Plans:** 1 plan
+
+Plans:
+- [ ] 06-01-PLAN.md — Write complete SKILL.md with CLI command reference, flag tables, examples, and four LLM workflow patterns
 
 ---
 *Roadmap created: 2026-03-14*
 *Plans created for Phase 1: 2026-03-14*
-*Plan split (01-01 → 01-01 + 01-01b): 2026-03-14*
+*Plan split (01-01 -> 01-01 + 01-01b): 2026-03-14*
 *FMT-04 de-scoped: 2026-03-14*
 *Plans created for Phase 3: 2026-03-16*
 *Plans created for Phase 4: 2026-03-19*
+*Plans created for Phase 5: 2026-03-21*
+*Plans created for Phase 6: 2026-03-22*
+
+### Phase 04.1: fix test errors try to run uv run pytest investigate & FIX (INSERTED)
+
+**Goal:** [Urgent work - to be planned]
+**Requirements**: TBD
+**Depends on:** Phase 4
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 04.1 to break down)
