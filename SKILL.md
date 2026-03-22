@@ -14,8 +14,6 @@ These flags are placed **before** any subcommand.
 
 Example: `bagels --at /path/to/project llm context --month 2026-03`
 
-Do NOT document or use `--migrate` or `--source` (one-time migration tools, not for LLM workflows).
-
 ---
 
 ## LLM Entry Point — `bagels llm context`
@@ -216,13 +214,35 @@ bagels trends --months 3 --category food --format json
 
 ## Mutation Commands
 
-### `bagels records add --from-yaml PATH`
+### `bagels records add`
 
-**Purpose:** Add one or more records from a YAML file.
+**Purpose:** Add a record using inline flags or batch-import from a YAML file.
+
+**Inline mode (no `--yaml`):** Creates a single record from flags. Missing required fields are prompted interactively.
 
 | Flag | Type | Description |
 |------|------|-------------|
-| `--from-yaml PATH` | file path (must exist) | YAML file containing records to import |
+| `--label` | string | Record label/description |
+| `--amount` | float | Amount (must be > 0) |
+| `--date` | `YYYY-MM-DD` | Record date (defaults to today if prompted) |
+| `--account-id` | int | Account ID |
+| `--category-id` | int | Category ID (optional) |
+| `--person-id` | int | Person ID (optional) |
+| `--income` | flag | Mark as income record |
+| `--transfer` | flag | Mark as transfer |
+| `--transfer-to-account-id` | int | Destination account ID for transfers |
+| `--format` / `-f` | `table\|json\|yaml` | Output format (default: table) |
+
+```bash
+bagels records add --label "Lunch" --amount 245 --date 2026-03-22 --account-id 1
+bagels records add --label "Salary" --amount 50000 --account-id 1 --income
+```
+
+**Batch mode (`--yaml PATH`):** Import one or more records from a YAML file.
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `--yaml PATH` | file path (must exist) | YAML file containing records to import |
 
 **Accepted YAML formats:**
 - List of dicts: `[{label, amount, date, ...}, ...]`
@@ -244,7 +264,353 @@ cat > /tmp/new-record.yaml << 'EOF'
   categorySlug: "food-dining-out"
   isIncome: false
 EOF
-bagels records add --from-yaml /tmp/new-record.yaml
+bagels records add --yaml /tmp/new-record.yaml
+```
+
+### `bagels records update IDENTIFIER`
+
+**Purpose:** Update an existing record by integer ID or slug.
+
+| Argument/Flag | Type | Default | Description |
+|---------------|------|---------|-------------|
+| `IDENTIFIER` | positional string | required | Integer ID or slug (e.g., `r_2026-03-22_001`) |
+| `--label` | string | — | New record label |
+| `--amount` | float | — | New amount |
+| `--date` | `YYYY-MM-DD` | — | New date |
+| `--account-id` | int | — | New account ID |
+| `--category-id` | int | — | New category ID |
+| `--person-id` | int | — | New person ID |
+| `--income/--no-income` | flag | — | Set income flag |
+| `--transfer/--no-transfer` | flag | — | Set transfer flag |
+| `--transfer-to-account-id` | int | — | New transfer destination account ID |
+| `--format` / `-f` | `table\|json\|yaml` | `table` | Output format |
+
+```bash
+bagels records update 42 --amount 300 --format json
+bagels records update r_2026-03-22_001 --label "Updated label"
+```
+
+### `bagels records delete IDENTIFIER`
+
+**Purpose:** Delete a record by integer ID or slug. Hard delete.
+
+| Argument/Flag | Type | Default | Description |
+|---------------|------|---------|-------------|
+| `IDENTIFIER` | positional string | required | Integer ID or slug |
+| `--force` | flag | — | Skip confirmation prompt |
+
+```bash
+bagels records delete 42 --force
+bagels records delete r_2026-03-22_001
+```
+
+---
+
+## Entity CRUD Commands
+
+### Accounts
+
+#### `bagels accounts add`
+
+**Purpose:** Create a new account.
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `--name` | string | Account name (prompted if missing) |
+| `--balance` | float | Beginning balance (prompted if missing) |
+| `--description` | string | Account description (optional) |
+| `--hidden` | flag | Mark account as hidden |
+| `--format` / `-f` | `table\|json\|yaml` | Output format (default: table) |
+
+```bash
+bagels accounts add --name "Savings" --balance 10000
+bagels accounts add --name "Cash" --balance 0 --format json
+```
+
+#### `bagels accounts show IDENTIFIER`
+
+**Purpose:** Show details for a single account.
+
+| Argument/Flag | Type | Default | Description |
+|---------------|------|---------|-------------|
+| `IDENTIFIER` | positional string | required | Integer ID or slug |
+| `--format` / `-f` | `table\|json\|yaml` | `table` | Output format |
+
+```bash
+bagels accounts show 1 --format json
+bagels accounts show acc_savings
+```
+
+#### `bagels accounts update IDENTIFIER`
+
+**Purpose:** Update an existing account.
+
+| Argument/Flag | Type | Default | Description |
+|---------------|------|---------|-------------|
+| `IDENTIFIER` | positional string | required | Integer ID or slug |
+| `--name` | string | — | New account name |
+| `--balance` | float | — | New beginning balance |
+| `--description` | string | — | New account description |
+| `--hidden/--no-hidden` | flag | — | Set account visibility |
+| `--format` / `-f` | `table\|json\|yaml` | `table` | Output format |
+
+```bash
+bagels accounts update 1 --name "New Savings"
+bagels accounts update 1 --hidden --format yaml
+```
+
+#### `bagels accounts delete IDENTIFIER`
+
+**Purpose:** Soft-delete an account.
+
+**Note:** Soft delete. `--cascade` soft-deletes all linked records. Without `--cascade`, delete is blocked if linked records exist.
+
+| Argument/Flag | Type | Default | Description |
+|---------------|------|---------|-------------|
+| `IDENTIFIER` | positional string | required | Integer ID or slug |
+| `--force` | flag | — | Skip confirmation prompt |
+| `--cascade` | flag | — | Soft-delete all linked records |
+
+```bash
+bagels accounts delete 1 --force
+bagels accounts delete 1 --cascade --force
+```
+
+---
+
+### Categories
+
+#### `bagels categories list`
+
+**Purpose:** List all categories.
+
+| Flag | Short | Type | Default | Description |
+|------|-------|------|---------|-------------|
+| `--format` | `-f` | `table\|json\|yaml` | `table` | Output format |
+
+```bash
+bagels categories list --format yaml
+```
+
+#### `bagels categories show IDENTIFIER`
+
+**Purpose:** Show details for a single category.
+
+| Argument/Flag | Type | Default | Description |
+|---------------|------|---------|-------------|
+| `IDENTIFIER` | positional string | required | Integer ID or slug |
+| `--format` / `-f` | `table\|json\|yaml` | `table` | Output format |
+
+```bash
+bagels categories show 5 --format json
+```
+
+#### `bagels categories add`
+
+**Purpose:** Create a new category.
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `--name` | string | Category name (prompted if missing) |
+| `--nature` | `Want\|Need\|Must` | Category nature (prompted if missing) |
+| `--color` | string | Hex color (e.g., `#FF5733`) |
+| `--parent-id` | int | Parent category ID (optional) |
+| `--format` / `-f` | `table\|json\|yaml` | Output format (default: table) |
+
+```bash
+bagels categories add --name "Dining Out" --nature Need --parent-id 5
+bagels categories add --name "Salary" --nature Must
+```
+
+#### `bagels categories update IDENTIFIER`
+
+**Purpose:** Update an existing category.
+
+| Argument/Flag | Type | Default | Description |
+|---------------|------|---------|-------------|
+| `IDENTIFIER` | positional string | required | Integer ID or slug |
+| `--name` | string | — | New category name |
+| `--nature` | `Want\|Need\|Must` | — | New category nature |
+| `--color` | string | — | New hex color |
+| `--parent-id` | int | — | New parent category ID |
+| `--format` / `-f` | `table\|json\|yaml` | `table` | Output format |
+
+```bash
+bagels categories update 5 --name "Food & Dining"
+```
+
+#### `bagels categories delete IDENTIFIER`
+
+**Purpose:** Delete a category.
+
+**Note:** Also soft-deletes subcategories. Use `--cascade` to also soft-delete linked records.
+
+| Argument/Flag | Type | Default | Description |
+|---------------|------|---------|-------------|
+| `IDENTIFIER` | positional string | required | Integer ID or slug |
+| `--force` | flag | — | Skip confirmation prompt |
+| `--cascade` | flag | — | Soft-delete all linked records |
+
+```bash
+bagels categories delete 5 --force
+bagels categories delete 5 --cascade
+```
+
+---
+
+### Persons
+
+#### `bagels persons list`
+
+**Purpose:** List all persons.
+
+| Flag | Short | Type | Default | Description |
+|------|-------|------|---------|-------------|
+| `--format` | `-f` | `table\|json\|yaml` | `table` | Output format |
+
+```bash
+bagels persons list --format yaml
+```
+
+#### `bagels persons add`
+
+**Purpose:** Create a new person.
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `--name` | string | Person name (prompted if missing) |
+| `--format` / `-f` | `table\|json\|yaml` | Output format (default: table) |
+
+```bash
+bagels persons add --name "Alice"
+```
+
+#### `bagels persons show IDENTIFIER`
+
+**Purpose:** Show details for a single person.
+
+| Argument/Flag | Type | Default | Description |
+|---------------|------|---------|-------------|
+| `IDENTIFIER` | positional string | required | Integer ID or slug |
+| `--format` / `-f` | `table\|json\|yaml` | `table` | Output format |
+
+```bash
+bagels persons show 1 --format json
+```
+
+#### `bagels persons update IDENTIFIER`
+
+**Purpose:** Update an existing person.
+
+| Argument/Flag | Type | Default | Description |
+|---------------|------|---------|-------------|
+| `IDENTIFIER` | positional string | required | Integer ID or slug |
+| `--name` | string | — | New person name |
+| `--format` / `-f` | `table\|json\|yaml` | `table` | Output format |
+
+```bash
+bagels persons update 1 --name "Bob"
+```
+
+#### `bagels persons delete IDENTIFIER`
+
+**Purpose:** Delete a person.
+
+**Note:** Use `--cascade` to soft-delete linked records (via splits).
+
+| Argument/Flag | Type | Default | Description |
+|---------------|------|---------|-------------|
+| `IDENTIFIER` | positional string | required | Integer ID or slug |
+| `--force` | flag | — | Skip confirmation prompt |
+| `--cascade` | flag | — | Soft-delete linked records |
+
+```bash
+bagels persons delete 1 --force
+bagels persons delete 1 --cascade
+```
+
+---
+
+### Templates
+
+#### `bagels templates list`
+
+**Purpose:** List all record templates.
+
+| Flag | Short | Type | Default | Description |
+|------|-------|------|---------|-------------|
+| `--format` | `-f` | `table\|json\|yaml` | `table` | Output format |
+
+```bash
+bagels templates list --format yaml
+```
+
+#### `bagels templates add`
+
+**Purpose:** Create a new record template.
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `--label` | string | Template label (prompted if missing) |
+| `--amount` | float | Template amount (prompted if missing) |
+| `--account-id` | int | Account ID (prompted if missing) |
+| `--category-id` | int | Category ID (optional) |
+| `--income` | flag | Mark as income |
+| `--transfer` | flag | Mark as transfer |
+| `--transfer-to-account-id` | int | Transfer target account ID |
+| `--format` / `-f` | `table\|json\|yaml` | Output format (default: table) |
+
+```bash
+bagels templates add --label "Rent" --amount 15000 --account-id 1
+bagels templates add --label "Salary" --amount 50000 --account-id 1 --income
+```
+
+#### `bagels templates show IDENTIFIER`
+
+**Purpose:** Show details for a single template.
+
+| Argument/Flag | Type | Default | Description |
+|---------------|------|---------|-------------|
+| `IDENTIFIER` | positional string | required | Integer ID or slug |
+| `--format` / `-f` | `table\|json\|yaml` | `table` | Output format |
+
+```bash
+bagels templates show 1 --format json
+```
+
+#### `bagels templates update IDENTIFIER`
+
+**Purpose:** Update an existing record template.
+
+| Argument/Flag | Type | Default | Description |
+|---------------|------|---------|-------------|
+| `IDENTIFIER` | positional string | required | Integer ID or slug |
+| `--label` | string | — | New template label |
+| `--amount` | float | — | New amount |
+| `--account-id` | int | — | New account ID |
+| `--category-id` | int | — | New category ID |
+| `--income/--no-income` | flag | — | Set income flag |
+| `--transfer/--no-transfer` | flag | — | Set transfer flag |
+| `--transfer-to-account-id` | int | — | New transfer target account ID |
+| `--format` / `-f` | `table\|json\|yaml` | `table` | Output format |
+
+```bash
+bagels templates update 1 --amount 16000
+```
+
+#### `bagels templates delete IDENTIFIER`
+
+**Purpose:** Hard-delete a record template.
+
+**Note:** Templates are permanently deleted (hard delete).
+
+| Argument/Flag | Type | Default | Description |
+|---------------|------|---------|-------------|
+| `IDENTIFIER` | positional string | required | Integer ID or slug |
+| `--force` | flag | — | Skip confirmation prompt |
+
+```bash
+bagels templates delete 1 --force
 ```
 
 ---
@@ -299,9 +665,9 @@ bagels summary --month 2026-03 --format yaml
 bagels categories tree --format yaml
 ```
 
-### 4. Add a Record from LLM
+### 4. Add a Record from LLM (Batch YAML)
 
-**When:** Create expense records from natural language user intent.
+**When:** Create expense records from natural language user intent using YAML file.
 
 ```bash
 cat > /tmp/new-record.yaml << 'EOF'
@@ -312,7 +678,17 @@ cat > /tmp/new-record.yaml << 'EOF'
   categorySlug: "food-dining-out"
   isIncome: false
 EOF
-bagels records add --from-yaml /tmp/new-record.yaml
+bagels records add --yaml /tmp/new-record.yaml
+```
+
+### 5. Create a Record from CLI Flags
+
+**When:** Quickly add a single expense/income without a YAML file.
+
+```bash
+bagels accounts list --format yaml    # get account IDs
+bagels categories tree --format yaml  # get category IDs
+bagels records add --label "Coffee" --amount 120 --date 2026-03-22 --account-id 1 --category-id 3
 ```
 
 ---
@@ -324,3 +700,7 @@ bagels records add --from-yaml /tmp/new-record.yaml
 - `bagels llm context` is the single best command for getting full financial context in one call.
 - `bagels schema full` orients you to all field names before writing mutation YAML.
 - `bagels accounts list --format yaml` and `bagels categories tree --format yaml` give you valid slugs to use in `records add` YAML.
+- `IDENTIFIER` in CRUD commands accepts either integer ID or slug string.
+- All create/update commands support `--format` for output format.
+- Delete commands prompt for confirmation by default; use `--force` to skip.
+- `--cascade` on delete also removes linked records (soft-delete). Records themselves are hard-deleted (exception to soft-delete pattern).
