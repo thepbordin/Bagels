@@ -118,9 +118,9 @@
 
 ## LLM CLI Documentation (Phase 6)
 
-- [ ] **DOC-01**: `SKILL.md` exists at repository root with complete CLI command reference
-- [ ] **DOC-02**: All current CLI commands documented with exact flag names, types, and one example each
-- [ ] **DOC-03**: Four named LLM workflow patterns with copy-pasteable shell commands
+- [x] **DOC-01**: `SKILL.md` exists at repository root with complete CLI command reference
+- [x] **DOC-02**: All current CLI commands documented with exact flag names, types, and one example each
+- [x] **DOC-03**: Four named LLM workflow patterns with copy-pasteable shell commands
 
 ## Out of Scope
 
