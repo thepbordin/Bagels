@@ -605,3 +605,173 @@ def add_record(
         session.close()
         if engine is not None:
             engine.dispose()
+
+
+@records.command("update")
+@click.argument("identifier", type=str)
+@click.option("--label", default=None, help="Record label/description")
+@click.option("--amount", type=float, default=None, help="Amount (must be > 0)")
+@click.option("--date", "date", default=None, help="Date in YYYY-MM-DD format")
+@click.option("--account-id", "account_id", type=int, default=None, help="Account ID")
+@click.option(
+    "--category-id", "category_id", type=int, default=None, help="Category ID"
+)
+@click.option("--person-id", "person_id", type=int, default=None, help="Person ID")
+@click.option(
+    "--income/--no-income", "income", default=None, help="Mark as income or not"
+)
+@click.option(
+    "--transfer/--no-transfer", "transfer", default=None, help="Mark as transfer or not"
+)
+@click.option(
+    "--transfer-to-account-id",
+    "transfer_to_account_id",
+    type=int,
+    default=None,
+    help="Destination account for transfers",
+)
+@click.option(
+    "--format",
+    "-f",
+    "format",
+    type=click.Choice(["table", "json", "yaml"]),
+    default="table",
+    help="Output format",
+)
+def update_record_cmd(
+    identifier,
+    label,
+    amount,
+    date,
+    account_id,
+    category_id,
+    person_id,
+    income,
+    transfer,
+    transfer_to_account_id,
+    format,
+):
+    """Update an existing record by ID or slug."""
+    from bagels.config import load_config
+    from bagels.cli._helpers import resolve_entity
+    from bagels.managers.records import update_record
+
+    load_config()
+    init_db()
+
+    session, engine = _open_session()
+    try:
+        record = resolve_entity(session, Record, identifier)
+        if record is None:
+            raise click.ClickException(f"Record '{identifier}' not found")
+
+        # Build update dict from non-None options
+        update_data = {}
+        if label is not None:
+            update_data["label"] = label
+        if amount is not None:
+            update_data["amount"] = amount
+        if account_id is not None:
+            update_data["accountId"] = account_id
+        if category_id is not None:
+            update_data["categoryId"] = category_id
+        if person_id is not None:
+            update_data["personId"] = person_id
+        if income is not None:
+            update_data["isIncome"] = income
+        if transfer is not None:
+            update_data["isTransfer"] = transfer
+        if transfer_to_account_id is not None:
+            update_data["transferToAccountId"] = transfer_to_account_id
+        if date is not None:
+            try:
+                update_data["date"] = datetime.strptime(date, "%Y-%m-%d")
+            except ValueError:
+                raise click.ClickException(
+                    f"Invalid date format '{date}'. Expected YYYY-MM-DD"
+                )
+
+        if not update_data:
+            raise click.ClickException(
+                "No fields to update. Use --label, --amount, --date, --account-id, "
+                "--category-id, --person-id, --income, or --transfer."
+            )
+
+        # Validate FK references if provided
+        if account_id is not None:
+            if not session.query(Account).filter(Account.id == account_id).first():
+                raise click.ClickException(f"Account with ID {account_id} not found")
+        if category_id is not None:
+            if not session.query(Category).filter(Category.id == category_id).first():
+                raise click.ClickException(f"Category with ID {category_id} not found")
+        if person_id is not None:
+            if not session.query(Person).filter(Person.id == person_id).first():
+                raise click.ClickException(f"Person with ID {person_id} not found")
+        if transfer_to_account_id is not None:
+            if (
+                not session.query(Account)
+                .filter(Account.id == transfer_to_account_id)
+                .first()
+            ):
+                raise click.ClickException(
+                    f"Transfer destination account with ID {transfer_to_account_id} not found"
+                )
+
+        updated = update_record(record.id, update_data)
+
+        # Reload with eager-loaded relationships for formatting
+        reloaded = (
+            session.query(Record)
+            .options(
+                joinedload(Record.category),
+                joinedload(Record.account),
+                joinedload(Record.transferToAccount),
+            )
+            .filter(Record.id == updated.id)
+            .first()
+        )
+
+        output = format_records([reloaded], format)
+        click.echo(output)
+
+    finally:
+        session.close()
+        if engine is not None:
+            engine.dispose()
+
+
+@records.command("delete")
+@click.argument("identifier", type=str)
+@click.option("--force", is_flag=True, default=False, help="Skip confirmation prompt")
+def delete_record_cmd(identifier, force):
+    """Delete a record by ID or slug."""
+    from bagels.config import load_config
+    from bagels.cli._helpers import resolve_entity, confirm_delete
+    from bagels.managers.records import delete_record
+
+    load_config()
+    init_db()
+
+    session, engine = _open_session()
+    try:
+        record = resolve_entity(session, Record, identifier)
+        if record is None:
+            raise click.ClickException(f"Record '{identifier}' not found")
+
+        date_str = record.date.strftime("%Y-%m-%d") if record.date else "no date"
+        display_str = f"{record.label} (${record.amount:.2f}, {date_str})"
+
+        if not confirm_delete("record", display_str, force):
+            click.echo("Cancelled.", err=True)
+            return
+
+        record_id = record.id
+        record_label = record.label
+        delete_record(record_id)
+
+        click.echo(f"Deleted record '{record_label}' (ID: {record_id})")
+
+    finally:
+        session.close()
+        if engine is not None:
+            engine.dispose()
