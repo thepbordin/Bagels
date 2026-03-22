@@ -231,7 +231,7 @@ def test_add_from_yaml(sample_db_with_records, cli_runner, tmp_path):
 
     # Run import command
     with patch("bagels.cli.records.Session", return_value=sample_db_with_records):
-        result = cli_runner.invoke(records, ["add", "--from-yaml", str(yaml_file)])
+        result = cli_runner.invoke(records, ["add", "--yaml", str(yaml_file)])
 
     assert result.exit_code == 0
     assert "Import complete!" in result.output
@@ -263,7 +263,7 @@ def test_add_from_yaml_dict_format(sample_db_with_records, cli_runner, tmp_path)
         yaml.dump(yaml_data, f)
 
     # Run import command
-    result = cli_runner.invoke(records, ["add", "--from-yaml", str(yaml_file)])
+    result = cli_runner.invoke(records, ["add", "--yaml", str(yaml_file)])
 
     assert result.exit_code == 0
     assert "Import complete!" in result.output
@@ -296,7 +296,7 @@ def test_add_from_yaml_validation(sample_db_with_records, cli_runner, tmp_path):
         yaml.dump(yaml_data, f)
 
     # Run import command
-    result = cli_runner.invoke(records, ["add", "--from-yaml", str(yaml_file)])
+    result = cli_runner.invoke(records, ["add", "--yaml", str(yaml_file)])
 
     # Should fail validation
     assert result.exit_code != 0
@@ -324,7 +324,7 @@ def test_add_from_yaml_missing_fields(sample_db_with_records, cli_runner, tmp_pa
         yaml.dump(yaml_data, f)
 
     # Run import command
-    result = cli_runner.invoke(records, ["add", "--from-yaml", str(yaml_file)])
+    result = cli_runner.invoke(records, ["add", "--yaml", str(yaml_file)])
 
     assert result.exit_code != 0
     assert "Missing required fields" in result.output or "label" in result.output
@@ -353,7 +353,7 @@ def test_add_from_yaml_invalid_date(sample_db_with_records, cli_runner, tmp_path
         yaml.dump(yaml_data, f)
 
     # Run import command
-    result = cli_runner.invoke(records, ["add", "--from-yaml", str(yaml_file)])
+    result = cli_runner.invoke(records, ["add", "--yaml", str(yaml_file)])
 
     assert result.exit_code != 0
     assert "Invalid date format" in result.output
@@ -387,7 +387,7 @@ def test_add_from_yaml_foreign_keys(sample_db_with_records, cli_runner, tmp_path
         yaml.dump(yaml_data, f)
 
     # Run import command
-    result = cli_runner.invoke(records, ["add", "--from-yaml", str(yaml_file)])
+    result = cli_runner.invoke(records, ["add", "--yaml", str(yaml_file)])
 
     assert result.exit_code == 0
     assert "Import complete!" in result.output
@@ -421,7 +421,7 @@ def test_add_from_yaml_invalid_fk(sample_db_with_records, cli_runner, tmp_path):
         yaml.dump(yaml_data, f)
 
     # Run import command
-    result = cli_runner.invoke(records, ["add", "--from-yaml", str(yaml_file)])
+    result = cli_runner.invoke(records, ["add", "--yaml", str(yaml_file)])
 
     assert result.exit_code != 0
     assert "not found" in result.output
@@ -437,7 +437,7 @@ def test_add_from_yaml_empty(sample_db_with_records, cli_runner, tmp_path):
         yaml.dump([], f)
 
     # Run import command
-    result = cli_runner.invoke(records, ["add", "--from-yaml", str(yaml_file)])
+    result = cli_runner.invoke(records, ["add", "--yaml", str(yaml_file)])
 
     assert result.exit_code == 0
     assert "No records found" in result.output
@@ -470,7 +470,7 @@ def test_add_from_yaml_multiple(sample_db_with_records, cli_runner, tmp_path):
         yaml.dump(yaml_data, f)
 
     # Run import command
-    result = cli_runner.invoke(records, ["add", "--from-yaml", str(yaml_file)])
+    result = cli_runner.invoke(records, ["add", "--yaml", str(yaml_file)])
 
     assert result.exit_code == 0
     assert "Import complete!" in result.output
