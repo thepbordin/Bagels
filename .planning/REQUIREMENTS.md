@@ -124,12 +124,12 @@
 
 ## CLI CRUD Mutations (Phase 7)
 
-- [ ] **CRUD-01**: `bagels accounts add/show/update/delete IDENTIFIER` commands with --force and --cascade flags
-- [ ] **CRUD-02**: `bagels categories add/list/show/update/delete IDENTIFIER` commands with --force and --cascade flags
-- [ ] **CRUD-03**: `bagels persons list/add/show/update/delete IDENTIFIER` commands registered as new top-level group
-- [ ] **CRUD-04**: `bagels templates list/add/show/update/delete IDENTIFIER` commands registered as new top-level group
-- [ ] **CRUD-05**: `bagels records add` supports inline flag-based single record creation (--label, --amount, --date, --account-id) in addition to batch --yaml import
-- [ ] **CRUD-06**: `bagels records update/delete IDENTIFIER` commands with --force on delete
+- [x] **CRUD-01**: `bagels accounts add/show/update/delete IDENTIFIER` commands with --force and --cascade flags
+- [x] **CRUD-02**: `bagels categories add/list/show/update/delete IDENTIFIER` commands with --force and --cascade flags
+- [x] **CRUD-03**: `bagels persons list/add/show/update/delete IDENTIFIER` commands registered as new top-level group
+- [x] **CRUD-04**: `bagels templates list/add/show/update/delete IDENTIFIER` commands registered as new top-level group
+- [x] **CRUD-05**: `bagels records add` supports inline flag-based single record creation (--label, --amount, --date, --account-id) in addition to batch --yaml import
+- [x] **CRUD-06**: `bagels records update/delete IDENTIFIER` commands with --force on delete
 - [ ] **CRUD-07**: All CRUD create/update commands support --format/-f (table/json/yaml) and echo the affected entity
 - [ ] **CRUD-08**: Delete commands show confirmation prompt by default; --force skips prompt; --cascade soft-deletes linked records (hard delete for records, which is an intentional exception)
 - [ ] **CRUD-09**: IDENTIFIER argument on update/show/delete accepts integer ID or slug string
