@@ -130,9 +130,9 @@
 - [x] **CRUD-04**: `bagels templates list/add/show/update/delete IDENTIFIER` commands registered as new top-level group
 - [x] **CRUD-05**: `bagels records add` supports inline flag-based single record creation (--label, --amount, --date, --account-id) in addition to batch --yaml import
 - [x] **CRUD-06**: `bagels records update/delete IDENTIFIER` commands with --force on delete
-- [ ] **CRUD-07**: All CRUD create/update commands support --format/-f (table/json/yaml) and echo the affected entity
-- [ ] **CRUD-08**: Delete commands show confirmation prompt by default; --force skips prompt; --cascade soft-deletes linked records (hard delete for records, which is an intentional exception)
-- [ ] **CRUD-09**: IDENTIFIER argument on update/show/delete accepts integer ID or slug string
+- [x] **CRUD-07**: All CRUD create/update commands support --format/-f (table/json/yaml) and echo the affected entity
+- [x] **CRUD-08**: Delete commands show confirmation prompt by default; --force skips prompt; --cascade soft-deletes linked records (hard delete for records, which is an intentional exception)
+- [x] **CRUD-09**: IDENTIFIER argument on update/show/delete accepts integer ID or slug string
 
 ## Out of Scope
 
@@ -211,9 +211,9 @@
 | CRUD-04 | Phase 7 | Planned |
 | CRUD-05 | Phase 7 | Planned |
 | CRUD-06 | Phase 7 | Planned |
-| CRUD-07 | Phase 7 | Planned |
-| CRUD-08 | Phase 7 | Planned |
-| CRUD-09 | Phase 7 | Planned |
+| CRUD-07 | Phase 7 | Complete |
+| CRUD-08 | Phase 7 | Complete |
+| CRUD-09 | Phase 7 | Complete |
 
 **Coverage:**
 - Total tracked requirements (including reduction, documentation, and CRUD mutations): 69
