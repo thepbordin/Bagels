@@ -189,27 +189,171 @@ def show_record(record_id, format):
 
 @records.command("add")
 @click.option(
-    "--from-yaml", type=click.Path(exists=True), help="Import records from YAML file"
+    "--yaml",
+    "yaml",
+    type=click.Path(exists=True),
+    help="Import records from YAML file (batch mode)",
 )
-def add_record(from_yaml):
-    """Add records (batch import from YAML)."""
+@click.option("--label", default=None, help="Record label/description")
+@click.option(
+    "--amount", "amount", type=float, default=None, help="Amount (must be > 0)"
+)
+@click.option("--date", "date", default=None, help="Date in YYYY-MM-DD format")
+@click.option("--account-id", "account_id", type=int, default=None, help="Account ID")
+@click.option(
+    "--category-id",
+    "category_id",
+    type=int,
+    default=None,
+    help="Category ID (optional)",
+)
+@click.option(
+    "--person-id", "person_id", type=int, default=None, help="Person ID (optional)"
+)
+@click.option("--income", is_flag=True, default=False, help="Mark as income record")
+@click.option("--transfer", is_flag=True, default=False, help="Mark as transfer")
+@click.option(
+    "--transfer-to-account-id",
+    "transfer_to_account_id",
+    type=int,
+    default=None,
+    help="Destination account for transfers",
+)
+@click.option(
+    "--format",
+    "-f",
+    "format",
+    type=click.Choice(["table", "json", "yaml"]),
+    default="table",
+    help="Output format for created record",
+)
+def add_record(
+    yaml,
+    label,
+    amount,
+    date,
+    account_id,
+    category_id,
+    person_id,
+    income,
+    transfer,
+    transfer_to_account_id,
+    format,
+):
+    """Add a record (inline flags or batch --yaml import)."""
     from bagels.config import load_config
+    from bagels.managers.records import create_record
 
     load_config()
     init_db()
 
-    if not from_yaml:
-        raise click.ClickException(
-            "Please provide --from-yaml option with a YAML file path"
-        )
+    if not yaml:
+        # Inline record creation
+        if label is None:
+            label = click.prompt("Record label")
+        if amount is None:
+            amount = click.prompt("Amount", type=float)
+        if date is None:
+            date = click.prompt(
+                "Date (YYYY-MM-DD)", default=datetime.now().strftime("%Y-%m-%d")
+            )
+        if account_id is None:
+            account_id = click.prompt("Account ID", type=int)
 
-    import yaml
+        # Validate date format
+        try:
+            record_date = datetime.strptime(date, "%Y-%m-%d")
+        except ValueError:
+            raise click.ClickException(
+                f"Invalid date format '{date}'. Expected YYYY-MM-DD"
+            )
+
+        session, engine = _open_session()
+        try:
+            # Validate account exists
+            account = session.query(Account).filter(Account.id == account_id).first()
+            if not account:
+                raise click.ClickException(f"Account with ID {account_id} not found")
+
+            # Validate optional FK references
+            if category_id is not None:
+                if (
+                    not session.query(Category)
+                    .filter(Category.id == category_id)
+                    .first()
+                ):
+                    raise click.ClickException(
+                        f"Category with ID {category_id} not found"
+                    )
+
+            if person_id is not None:
+                if not session.query(Person).filter(Person.id == person_id).first():
+                    raise click.ClickException(f"Person with ID {person_id} not found")
+
+            if transfer and transfer_to_account_id is None:
+                raise click.ClickException(
+                    "--transfer-to-account-id required when --transfer is used"
+                )
+
+            if transfer_to_account_id is not None:
+                if (
+                    not session.query(Account)
+                    .filter(Account.id == transfer_to_account_id)
+                    .first()
+                ):
+                    raise click.ClickException(
+                        f"Transfer destination account with ID {transfer_to_account_id} not found"
+                    )
+
+            # Build record data dict
+            record_data = {
+                "label": label,
+                "amount": float(amount),
+                "date": record_date,
+                "accountId": account_id,
+                "isIncome": income,
+                "isTransfer": transfer,
+            }
+            if category_id is not None:
+                record_data["categoryId"] = category_id
+            if person_id is not None:
+                record_data["personId"] = person_id
+            if transfer_to_account_id is not None:
+                record_data["transferToAccountId"] = transfer_to_account_id
+
+            # Generate slug
+            record_data["slug"] = generate_record_slug(record_date, session)
+
+            # Create the record
+            record = create_record(record_data)
+
+            # Reload with eager-loaded relationships for formatting
+            created = (
+                session.query(Record)
+                .options(
+                    joinedload(Record.category),
+                    joinedload(Record.account),
+                    joinedload(Record.transferToAccount),
+                )
+                .filter(Record.id == record.id)
+                .first()
+            )
+
+            output = format_records([created], format)
+            click.echo(output)
+        finally:
+            session.close()
+            if engine is not None:
+                engine.dispose()
+        return
+
+    import yaml as yaml_module
 
     # Load YAML file
-    yaml_path = Path(from_yaml)
+    yaml_path = Path(yaml)
     try:
         with open(yaml_path, "r") as f:
-            yaml_data = yaml.safe_load(f)
+            yaml_data = yaml_module.safe_load(f)
     except Exception as e:
         raise click.ClickException(f"Failed to load YAML file: {e}")
 
