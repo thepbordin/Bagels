@@ -443,7 +443,7 @@ bagels categories update 5 --name "Food & Dining"
 
 **Purpose:** Delete a category.
 
-**Note:** Also soft-deletes subcategories. Use `--cascade` to also soft-delete linked records.
+**Note:** Use `--cascade` to also soft-delete linked records. Subcategories are not automatically deleted.
 
 | Argument/Flag | Type | Default | Description |
 |---------------|------|---------|-------------|
