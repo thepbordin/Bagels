@@ -1,8 +1,7 @@
 """
-Git repository management for Bagels data directory.
+Deprecated Git compatibility package.
 
-Provides functions to initialize Git repository and create .gitignore
-for YAML-based data tracking.
+Git/YAML sync was removed as part of SQLite-only runtime reduction.
 """
 
 from bagels.git.repository import initialize_git_repo, create_gitignore

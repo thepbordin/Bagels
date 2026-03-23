@@ -3,7 +3,7 @@ from datetime import datetime
 from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer
 from sqlalchemy.orm import relationship, validates
 
-from bagels.config import CONFIG
+import bagels.config as _config
 
 from .database.db import Base
 
@@ -33,5 +33,5 @@ class Split(Base):
     @validates("amount")
     def validate_amount(self, key, value):
         if value is not None:
-            return round(value, CONFIG.defaults.round_decimals)
+            return round(value, _config.CONFIG.defaults.round_decimals)
         return value

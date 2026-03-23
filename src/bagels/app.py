@@ -1,6 +1,6 @@
 from importlib.metadata import metadata
 
-from textual import events, log, on, work
+from textual import events, log, on
 from textual.app import App as TextualApp
 from textual.app import ComposeResult
 from textual.command import CommandPalette
@@ -84,42 +84,6 @@ class App(TextualApp):
             },
             screen=self.screen,
         )
-        # ---------- startup import ---------- #
-        self.run_startup_import()
-
-    @work(thread=True, exclusive=True)
-    def run_startup_import(self) -> None:
-        """Background worker: optional git pull then full YAML → SQLite sync."""
-        try:
-            from bagels.config import CONFIG  # noqa: PLC0415
-
-            if CONFIG is None:
-                return
-
-            # Optional: pull from remote before import (GIT-08)
-            if CONFIG.git.enabled and CONFIG.git.auto_pull:
-                try:
-                    from bagels.git.operations import pull_from_remote  # noqa: PLC0415
-
-                    pull_from_remote(
-                        remote_name=CONFIG.git.remote,
-                        branch=CONFIG.git.branch,
-                        silent=True,
-                    )
-                except Exception:
-                    pass  # offline/no-remote failures must never block startup import
-
-            # Full YAML → SQLite sync (DATA-08)
-            from bagels.importer.importer import run_full_import  # noqa: PLC0415
-
-            run_full_import()
-
-            # Non-blocking toast on success
-            self.app.call_from_thread(
-                lambda: self.notify("Data synced from YAML", timeout=2)
-            )
-        except Exception:
-            pass  # Never crash the TUI on startup import failure
 
     # used by the textual app to get the theme variables
     def get_css_variables(self) -> dict[str, str]:

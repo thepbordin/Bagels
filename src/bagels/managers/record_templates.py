@@ -1,6 +1,3 @@
-import logging
-import threading
-
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload, sessionmaker
 
@@ -8,41 +5,6 @@ from bagels.models.database.app import db_engine
 from bagels.models.record_template import RecordTemplate
 
 Session = sessionmaker(bind=db_engine)
-
-logger = logging.getLogger(__name__)
-
-
-def _trigger_entity_export() -> None:
-    """Export templates YAML in a background daemon thread."""
-    try:
-        import bagels.config as config_mod
-
-        if config_mod.CONFIG is None:
-            return
-
-        from bagels.export.exporter import export_templates
-        from bagels.locations import data_directory
-        from bagels.models.database.app import db_engine as _engine
-        from sqlalchemy.orm import sessionmaker as _sessionmaker
-
-        _Session = _sessionmaker(bind=_engine)
-        session = _Session()
-        try:
-            filepath = export_templates(session, data_directory())
-        finally:
-            session.close()
-
-        cfg = config_mod.CONFIG
-        if not getattr(getattr(cfg, "git", None), "enabled", False):
-            return
-        if not getattr(cfg.git, "auto_commit", False):
-            return
-
-        from bagels.git.operations import auto_commit_yaml
-
-        auto_commit_yaml(filepath, "chore(templates): sync templates yaml")
-    except Exception:
-        logger.exception("Auto-export hook failed for templates")
 
 
 # region c
@@ -52,10 +14,23 @@ def create_template(data):
         new_template = RecordTemplate(**data)
         session.add(new_template)
         session.commit()
-        session.refresh(new_template)
+        stmt = (
+            select(RecordTemplate)
+            .options(
+                joinedload(RecordTemplate.category),
+                joinedload(RecordTemplate.account),
+                joinedload(RecordTemplate.transferToAccount),
+            )
+            .where(RecordTemplate.id == new_template.id)
+        )
+        new_template = session.execute(stmt).unique().scalar_one()
         session.expunge(new_template)
-        t = threading.Thread(target=_trigger_entity_export, daemon=True)
-        t.start()
+        if new_template.account:
+            session.expunge(new_template.account)
+        if new_template.category:
+            session.expunge(new_template.category)
+        if new_template.transferToAccount:
+            session.expunge(new_template.transferToAccount)
         return new_template
     finally:
         session.close()
@@ -78,6 +53,7 @@ def get_all_templates():
             .options(
                 joinedload(RecordTemplate.category),
                 joinedload(RecordTemplate.account),
+                joinedload(RecordTemplate.transferToAccount),
             )
             .order_by(RecordTemplate.order)
         )
@@ -94,6 +70,7 @@ def get_record_templates():
             .options(
                 joinedload(RecordTemplate.category),
                 joinedload(RecordTemplate.account),
+                joinedload(RecordTemplate.transferToAccount),
             )
             .filter(RecordTemplate.isTransfer == False)  # noqa: E712
             .order_by(RecordTemplate.order)
@@ -111,6 +88,7 @@ def get_transfer_templates():
             .options(
                 joinedload(RecordTemplate.category),
                 joinedload(RecordTemplate.account),
+                joinedload(RecordTemplate.transferToAccount),
             )
             .filter(RecordTemplate.isTransfer)
             .order_by(RecordTemplate.order)
@@ -123,16 +101,13 @@ def get_transfer_templates():
 def get_template_by_id(recordtemplate_id) -> RecordTemplate:
     session = Session()
     try:
-        select(RecordTemplate).options(
-            joinedload(RecordTemplate.category),
-            joinedload(RecordTemplate.account),
-        )
         return session.get(
             RecordTemplate,
             recordtemplate_id,
             options=[
                 joinedload(RecordTemplate.category),
                 joinedload(RecordTemplate.account),
+                joinedload(RecordTemplate.transferToAccount),
             ],
         )
     finally:
@@ -173,10 +148,23 @@ def update_template(recordtemplate_id, data):
             for key, value in data.items():
                 setattr(recordtemplate, key, value)
             session.commit()
-            session.refresh(recordtemplate)
+            stmt = (
+                select(RecordTemplate)
+                .options(
+                    joinedload(RecordTemplate.category),
+                    joinedload(RecordTemplate.account),
+                    joinedload(RecordTemplate.transferToAccount),
+                )
+                .where(RecordTemplate.id == recordtemplate_id)
+            )
+            recordtemplate = session.execute(stmt).unique().scalar_one()
             session.expunge(recordtemplate)
-            t = threading.Thread(target=_trigger_entity_export, daemon=True)
-            t.start()
+            if recordtemplate.account:
+                session.expunge(recordtemplate.account)
+            if recordtemplate.category:
+                session.expunge(recordtemplate.category)
+            if recordtemplate.transferToAccount:
+                session.expunge(recordtemplate.transferToAccount)
         return recordtemplate
     finally:
         session.close()
@@ -245,8 +233,6 @@ def delete_template(recordtemplate_id):
                 template.order = recordtemplate.order + i
 
             session.commit()
-            t = threading.Thread(target=_trigger_entity_export, daemon=True)
-            t.start()
             return True
         return False
     finally:

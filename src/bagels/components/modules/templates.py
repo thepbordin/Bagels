@@ -67,7 +67,7 @@ class Templates(Static):
                     classes="template-item",
                 )
             else:
-                color = template.category.color
+                color = template.category.color if template.category else "white"
                 widget = Container(
                     Label(
                         f"[{color}]{CONFIG.symbols.category_color}[/{color}]",

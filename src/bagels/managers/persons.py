@@ -1,5 +1,3 @@
-import logging
-import threading
 from dataclasses import dataclass
 
 from sqlalchemy import and_, column, desc, func, select
@@ -14,42 +12,6 @@ from bagels.models.split import Split
 
 Session = sessionmaker(bind=db_engine)
 
-logger = logging.getLogger(__name__)
-
-
-def _trigger_entity_export() -> None:
-    """Export persons YAML in a background daemon thread."""
-    try:
-        import bagels.config as config_mod
-
-        if config_mod.CONFIG is None:
-            return
-
-        from bagels.export.exporter import export_persons
-        from bagels.locations import data_directory
-        from bagels.models.database.app import db_engine as _engine
-        from sqlalchemy.orm import sessionmaker as _sessionmaker
-
-        _Session = _sessionmaker(bind=_engine)
-        session = _Session()
-        try:
-            filepath = export_persons(session, data_directory())
-        finally:
-            session.close()
-
-        cfg = config_mod.CONFIG
-        if not getattr(getattr(cfg, "git", None), "enabled", False):
-            return
-        if not getattr(cfg.git, "auto_commit", False):
-            return
-
-        from bagels.git.operations import auto_commit_yaml
-
-        auto_commit_yaml(filepath, "chore(persons): sync persons yaml")
-    except Exception:
-        logger.exception("Auto-export hook failed for persons")
-
-
 # region Create
 
 
@@ -62,8 +24,6 @@ def create_person(data):
         session.commit()
         session.refresh(new_person)
         session.expunge(new_person)
-        t = threading.Thread(target=_trigger_entity_export, daemon=True)
-        t.start()
         return new_person
     finally:
         session.close()
@@ -217,8 +177,6 @@ def update_person(person_id, data) -> Person:
             session.commit()
             session.refresh(person)
             session.expunge(person)
-            t = threading.Thread(target=_trigger_entity_export, daemon=True)
-            t.start()
         return person
     finally:
         session.close()
@@ -247,8 +205,6 @@ def delete_person(person_id) -> bool:
                 session.delete(person)
 
             session.commit()
-            t = threading.Thread(target=_trigger_entity_export, daemon=True)
-            t.start()
             return True
         return False
     finally:
