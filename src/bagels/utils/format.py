@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from bagels.config import CONFIG
+import bagels.config as _config
 
 
 def parse_formula_expression(value: str) -> float:
@@ -11,7 +11,7 @@ def parse_formula_expression(value: str) -> float:
         # remove ending operators
         if value[-1] in "+-*/.":
             value = value[:-1]
-        return round(float(eval(value)), CONFIG.defaults.round_decimals)
+        return round(float(eval(value)), _config.CONFIG.defaults.round_decimals)
     except Exception:
         return 0
 
@@ -33,13 +33,13 @@ def format_date_to_readable(date) -> str:
     if start_of_week <= date <= end_of_week:
         return date.strftime("%A")
     else:
-        return date.strftime(CONFIG.defaults.date_format)
+        return date.strftime(_config.CONFIG.defaults.date_format)
 
 
 def format_period_to_readable(filter: dict) -> str:
     offset = filter["offset"]
     offset_type = filter["offset_type"]
-    first_day_of_week = CONFIG.defaults.first_day_of_week
+    first_day_of_week = _config.CONFIG.defaults.first_day_of_week
     if offset_type == "day":
         return format_date_to_readable(datetime.now() + timedelta(days=offset))
     match offset:

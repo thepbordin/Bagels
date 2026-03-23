@@ -1,5 +1,3 @@
-import logging
-import threading
 from datetime import datetime
 
 from rich.text import Text
@@ -12,41 +10,6 @@ from bagels.models.database.app import db_engine
 from bagels.models.record import Record
 
 Session = sessionmaker(bind=db_engine)
-
-logger = logging.getLogger(__name__)
-
-
-def _trigger_entity_export() -> None:
-    """Export categories YAML in a background daemon thread."""
-    try:
-        import bagels.config as config_mod
-
-        if config_mod.CONFIG is None:
-            return
-
-        from bagels.export.exporter import export_categories
-        from bagels.locations import data_directory
-        from bagels.models.database.app import db_engine as _engine
-        from sqlalchemy.orm import sessionmaker as _sessionmaker
-
-        _Session = _sessionmaker(bind=_engine)
-        session = _Session()
-        try:
-            filepath = export_categories(session, data_directory())
-        finally:
-            session.close()
-
-        cfg = config_mod.CONFIG
-        if not getattr(getattr(cfg, "git", None), "enabled", False):
-            return
-        if not getattr(cfg.git, "auto_commit", False):
-            return
-
-        from bagels.git.operations import auto_commit_yaml
-
-        auto_commit_yaml(filepath, "chore(categories): sync categories yaml")
-    except Exception:
-        logger.exception("Auto-export hook failed for categories")
 
 
 # region Get
@@ -204,8 +167,6 @@ def create_category(data):
         session.commit()
         session.refresh(new_category)
         session.expunge(new_category)
-        t = threading.Thread(target=_trigger_entity_export, daemon=True)
-        t.start()
         return new_category
     finally:
         session.close()
@@ -223,8 +184,6 @@ def update_category(category_id, data):
             session.commit()
             session.refresh(category)
             session.expunge(category)
-            t = threading.Thread(target=_trigger_entity_export, daemon=True)
-            t.start()
         return category
     finally:
         session.close()
@@ -249,8 +208,6 @@ def delete_category(category_id):
             session.commit()
             session.refresh(category)
             session.expunge(category)
-            t = threading.Thread(target=_trigger_entity_export, daemon=True)
-            t.start()
             return True
         return False
     finally:

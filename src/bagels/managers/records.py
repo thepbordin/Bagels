@@ -1,5 +1,3 @@
-import logging
-import threading
 from datetime import datetime, timedelta
 
 from sqlalchemy import func
@@ -15,63 +13,6 @@ from bagels.models.split import Split
 
 Session = sessionmaker(bind=db_engine)
 
-logger = logging.getLogger(__name__)
-
-
-def _trigger_export_and_commit(
-    record_date: datetime, operation: str, label: str
-) -> None:
-    """Export the affected month YAML and optionally auto-commit it.
-
-    Runs as a daemon background thread.  All exceptions are swallowed so that
-    CRUD operations are never blocked or failed by an export/git problem.
-
-    Args:
-        record_date: Date of the record that was created/updated/deleted.
-        operation: Human-readable verb ("add", "update", "delete").
-        label: Record label used in the commit message.
-    """
-    try:
-        import bagels.config as config_mod
-
-        if config_mod.CONFIG is None:
-            return
-
-        from bagels.export.exporter import export_records_for_month
-        from bagels.locations import data_directory
-        from bagels.models.database.app import db_engine as _engine
-        from sqlalchemy.orm import sessionmaker as _sessionmaker
-
-        _Session = _sessionmaker(bind=_engine)
-        session = _Session()
-        try:
-            filepath = export_records_for_month(
-                session, data_directory(), record_date.year, record_date.month
-            )
-        finally:
-            session.close()
-
-        cfg = config_mod.CONFIG
-        if not getattr(getattr(cfg, "git", None), "enabled", False):
-            return
-        if not getattr(cfg.git, "auto_commit", False):
-            return
-
-        from bagels.git.operations import auto_commit_yaml
-
-        month_key = f"{record_date.year:04d}-{record_date.month:02d}"
-        fmt = getattr(cfg.git, "commit_message_format", None)
-        if fmt:
-            message = fmt.format(month_key=month_key, operation=operation, label=label)
-        else:
-            message = f"records({month_key}): {operation} '{label}'"
-
-        auto_commit_yaml(filepath, message)
-    except Exception:
-        logger.exception(
-            "Auto-export hook failed for record '%s' (op=%s)", label, operation
-        )
-
 
 # region Create
 def create_record(record_data: dict):
@@ -82,12 +23,6 @@ def create_record(record_data: dict):
         session.commit()
         session.refresh(record)
         session.expunge(record)
-        t = threading.Thread(
-            target=_trigger_export_and_commit,
-            args=(record.date, "add", record.label),
-            daemon=True,
-        )
-        t.start()
         return record
     finally:
         session.close()
@@ -340,12 +275,6 @@ def update_record(record_id: int, updated_data: dict):
             session.commit()
             session.refresh(record)
             session.expunge(record)
-            t = threading.Thread(
-                target=_trigger_export_and_commit,
-                args=(record.date, "update", record.label),
-                daemon=True,
-            )
-            t.start()
         return record
     finally:
         session.close()
@@ -371,17 +300,8 @@ def delete_record(record_id: int):
     try:
         record = session.query(Record).get(record_id)
         if record:
-            # Capture date and label before deletion so the hook has them
-            record_date = record.date
-            record_label = record.label
             session.delete(record)
             session.commit()
-            t = threading.Thread(
-                target=_trigger_export_and_commit,
-                args=(record_date, "delete", record_label),
-                daemon=True,
-            )
-            t.start()
         return record
     finally:
         session.close()

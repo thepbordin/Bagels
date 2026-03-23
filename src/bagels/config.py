@@ -101,6 +101,7 @@ class State(BaseModel):
     theme: str = "tokyo-night"
     check_for_updates: bool = True
     footer_visibility: bool = True
+    sync_deprecation_warned: bool = False
     budgeting: BudgetingStates = BudgetingStates()
 
 
@@ -239,6 +240,17 @@ def load_config():
             current_config.state = loaded_config.state
             current_config.git = loaded_config.git
             CONFIG = current_config
+
+        if (
+            CONFIG is not None
+            and not CONFIG.state.sync_deprecation_warned
+            and _legacy_sync_config_present(CONFIG)
+        ):
+            print(
+                "Warning: Bagels Git and YAML sync features were removed. "
+                "Bagels now runs in SQLite-only mode and legacy git.* settings are ignored."
+            )
+            write_state("sync_deprecation_warned", True)
     except ConfigurationError as e:
         print("\nConfiguration Error:")
         print("==================")
@@ -285,3 +297,16 @@ def write_state(key: str, value: Any) -> None:
     for k in keys[:-1]:
         d = getattr(d, k)
     setattr(d, keys[-1], value)
+
+
+def _legacy_sync_config_present(config: Config) -> bool:
+    """Return True when legacy git/yaml sync intent is configured."""
+    git = config.git
+    return (
+        git.enabled
+        or git.auto_push
+        or git.auto_pull
+        or git.remote != "origin"
+        or git.branch != "main"
+        or git.commit_message_format is not None
+    )

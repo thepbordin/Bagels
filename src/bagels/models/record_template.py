@@ -16,7 +16,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship, synonym, validates
 
-from bagels.config import CONFIG
+import bagels.config as _config
 
 from .database.db import Base
 
@@ -73,7 +73,7 @@ class RecordTemplate(Base):
     @validates("amount")
     def validate_amount(self, key, value):
         if value is not None:
-            return round(value, CONFIG.defaults.round_decimals)
+            return round(value, _config.CONFIG.defaults.round_decimals)
         return value
 
 
