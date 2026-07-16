@@ -82,3 +82,26 @@ def test_accounts_list_help(cli_runner, sample_db_with_records):
     assert result.exit_code == 0
     assert "List all accounts" in result.output
     assert "--format" in result.output or "-f" in result.output
+
+
+def test_accounts_json_includes_slug(cli_runner, sample_db_with_records):
+    """Test that JSON output includes slug field for each account."""
+    result = cli_runner.invoke(accounts, ["list", "--format", "json"])
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    assert len(data) > 0
+    for account in data:
+        assert "slug" in account, f"Account {account.get('name')} missing slug field"
+        assert account["slug"] is not None, (
+            f"Account {account.get('name')} has null slug"
+        )
+        assert len(account["slug"]) > 0, f"Account {account.get('name')} has empty slug"
+
+
+def test_accounts_table_shows_slug(cli_runner, sample_db_with_records):
+    """Test that table output includes Slug column."""
+    result = cli_runner.invoke(accounts, ["list"])
+    assert result.exit_code == 0
+    assert "Slug" in result.output
+    # Fixture accounts use slugs: savings, checking, credit-card
+    assert any(slug in result.output for slug in ["savings", "checking", "credit-card"])

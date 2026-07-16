@@ -83,13 +83,14 @@ def format_accounts(accounts: list[Account], output_format: str = "table") -> st
     else:  # table
         table = Table(title="Accounts", show_header=True, header_style="bold magenta")
         table.add_column("ID", style="cyan", width=8)
+        table.add_column("Slug", style="green", width=25)
         table.add_column("Name", style="white", width=25)
         table.add_column("Balance", justify="right", style="yellow", width=15)
 
         for account in accounts:
             account_id = str(account.id)
             balance_str = f"${account.beginningBalance:.2f}"
-            table.add_row(account_id, account.name, balance_str)
+            table.add_row(account_id, account.slug or "", account.name, balance_str)
 
         with console.capture() as capture:
             console.print(table)
@@ -213,6 +214,7 @@ def _account_to_dict(account: Account) -> dict[str, Any]:
     """Convert Account to dict."""
     return {
         "id": account.id,
+        "slug": account.slug,
         "name": account.name,
         "beginning_balance": account.beginningBalance,
         "description": account.description,
@@ -224,6 +226,7 @@ def _category_to_dict(category: Category) -> dict[str, Any]:
     """Convert Category to dict with parent.name."""
     result = {
         "id": category.id,
+        "slug": category.slug,
         "name": category.name,
         "nature": str(category.nature),
         "color": category.color,
