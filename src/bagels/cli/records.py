@@ -87,6 +87,7 @@ def list_records(
                 joinedload(Record.category),
                 joinedload(Record.account),
                 joinedload(Record.transferToAccount),
+                joinedload(Record.splits),
             )
             .filter(Record.transferToAccountId.is_(None))
         )
@@ -148,6 +149,8 @@ def show_record(record_id, format):
 
     session, engine = _open_session()
     try:
+        from bagels.models.split import Split
+
         # Try to parse as integer ID first, then as slug
         try:
             record_id_int = int(record_id)
@@ -157,6 +160,7 @@ def show_record(record_id, format):
                     joinedload(Record.category),
                     joinedload(Record.account),
                     joinedload(Record.transferToAccount),
+                    joinedload(Record.splits).joinedload(Split.person),
                 )
                 .filter(Record.id == record_id_int)
                 .first()
@@ -169,6 +173,7 @@ def show_record(record_id, format):
                     joinedload(Record.category),
                     joinedload(Record.account),
                     joinedload(Record.transferToAccount),
+                    joinedload(Record.splits).joinedload(Split.person),
                 )
                 .filter(Record.slug == record_id)
                 .first()

@@ -48,7 +48,17 @@ def format_records(records: list[Record], output_format: str = "table") -> str:
             # Use slug if available, otherwise fall back to ID
             record_id = record.slug if record.slug else str(record.id)
             date_str = record.date.strftime("%Y-%m-%d") if record.date else "N/A"
-            amount_str = f"${record.amount:.2f}"
+
+            # Calculate split-aware amount display
+            record_splits = (
+                record.splits if hasattr(record, "splits") and record.splits else []
+            )
+            if record_splits:
+                total_split = sum(s.amount for s in record_splits)
+                net_amount = record.amount - total_split
+                amount_str = f"${net_amount:.2f} (+${total_split:.2f} split)"
+            else:
+                amount_str = f"${record.amount:.2f}"
 
             # Handle category
             category_name = record.category.name if record.category else "None"
@@ -68,7 +78,40 @@ def format_records(records: list[Record], output_format: str = "table") -> str:
         # Capture table output as string
         with console.capture() as capture:
             console.print(table)
-        return capture.get()
+        output = capture.get()
+
+        # For single-record display, append split details if present
+        if len(records) == 1 and hasattr(records[0], "splits") and records[0].splits:
+            split_table = Table(
+                title="Splits", show_header=True, header_style="bold cyan"
+            )
+            split_table.add_column("ID", style="cyan", width=8)
+            split_table.add_column("Person", style="white", width=20)
+            split_table.add_column("Amount", justify="right", style="yellow", width=12)
+            split_table.add_column("Paid", style="green", width=8)
+            split_table.add_column("Paid Date", style="blue", width=12)
+            for split in records[0].splits:
+                person_name = (
+                    split.person.name
+                    if hasattr(split, "person") and split.person
+                    else f"Person #{split.personId}"
+                )
+                paid_str = "Yes" if split.isPaid else "No"
+                paid_date_str = (
+                    split.paidDate.strftime("%Y-%m-%d") if split.paidDate else ""
+                )
+                split_table.add_row(
+                    str(split.id),
+                    person_name,
+                    f"${split.amount:.2f}",
+                    paid_str,
+                    paid_date_str,
+                )
+            with console.capture() as split_capture:
+                console.print(split_table)
+            return output + "\n" + split_capture.get()
+
+        return output
 
 
 def format_accounts(accounts: list[Account], output_format: str = "table") -> str:
@@ -186,10 +229,14 @@ def to_yaml(data: list | dict) -> str:
 
 def _record_to_dict(record: Record) -> dict[str, Any]:
     """Convert Record to dict with nested objects (category.name, account.name)."""
+    record_splits = record.splits if hasattr(record, "splits") and record.splits else []
     return {
         "id": record.slug if record.slug else record.id,
         "label": record.label,
         "amount": record.amount,
+        "net_amount": record.amount - sum(s.amount for s in record_splits)
+        if record_splits
+        else record.amount,
         "date": record.date.isoformat() if record.date else None,
         "is_income": record.isIncome,
         "is_transfer": record.isTransfer,
@@ -207,6 +254,16 @@ def _record_to_dict(record: Record) -> dict[str, Any]:
         else None,
         "created_at": record.createdAt.isoformat() if record.createdAt else None,
         "updated_at": record.updatedAt.isoformat() if record.updatedAt else None,
+        "splits": [
+            {
+                "id": s.id,
+                "person": s.person.name if hasattr(s, "person") and s.person else None,
+                "amount": s.amount,
+                "is_paid": s.isPaid,
+                "paid_date": s.paidDate.isoformat() if s.paidDate else None,
+            }
+            for s in record_splits
+        ],
     }
 
 
