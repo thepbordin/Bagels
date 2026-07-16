@@ -220,6 +220,12 @@ def show_record(record_id, format):
     help="Destination account for transfers",
 )
 @click.option(
+    "--split",
+    "splits",
+    multiple=True,
+    help="Add split as person_slug:amount (repeatable, e.g. --split alice:30 --split bob:20)",
+)
+@click.option(
     "--format",
     "-f",
     "format",
@@ -238,6 +244,7 @@ def add_record(
     income,
     transfer,
     transfer_to_account_id,
+    splits,
     format,
 ):
     """Add a record (inline flags or batch --yaml import)."""
@@ -326,6 +333,55 @@ def add_record(
 
             # Create the record
             record = create_record(record_data)
+
+            # Create splits if --split flags provided
+            if splits:
+                from bagels.managers.splits import create_split as create_split_fn
+
+                for split_str in splits:
+                    # Parse "person_slug:amount" format
+                    if ":" not in split_str:
+                        raise click.ClickException(
+                            f"Invalid split format '{split_str}'. Expected person_slug:amount (e.g. alice:30)"
+                        )
+                    parts = split_str.rsplit(":", 1)
+                    person_slug = parts[0]
+                    try:
+                        split_amount = float(parts[1])
+                    except ValueError:
+                        raise click.ClickException(
+                            f"Invalid split amount in '{split_str}'. Amount must be a number."
+                        )
+                    if split_amount <= 0:
+                        raise click.ClickException(
+                            f"Split amount must be greater than 0 (got {split_amount} in '{split_str}')"
+                        )
+
+                    # Resolve person by slug or ID
+                    person_obj = (
+                        session.query(Person).filter(Person.slug == person_slug).first()
+                    )
+                    if person_obj is None:
+                        # Try as integer ID
+                        try:
+                            person_id_int = int(person_slug)
+                            person_obj = (
+                                session.query(Person)
+                                .filter(Person.id == person_id_int)
+                                .first()
+                            )
+                        except ValueError:
+                            pass
+                    if person_obj is None:
+                        raise click.ClickException(f"Person '{person_slug}' not found")
+
+                    create_split_fn(
+                        {
+                            "recordId": record.id,
+                            "personId": person_obj.id,
+                            "amount": split_amount,
+                        }
+                    )
 
             # Reload with eager-loaded relationships for formatting
             created = (

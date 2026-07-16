@@ -135,6 +135,7 @@ from bagels.cli.llm import llm
 from bagels.cli.schema import schema
 from bagels.cli.persons import persons
 from bagels.cli.templates import templates
+from bagels.cli.splits import splits
 
 cli.add_command(init_command, name="init")
 cli.add_command(records, name="records")
@@ -147,6 +148,7 @@ cli.add_command(llm, name="llm")
 cli.add_command(schema, name="schema")
 cli.add_command(persons, name="persons")
 cli.add_command(templates, name="templates")
+cli.add_command(splits, name="splits")
 
 
 if __name__ == "__main__":

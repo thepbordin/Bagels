@@ -24,7 +24,9 @@ class TestSlugGenerationFirstOfDay:
         test_date = date(2026, 3, 14)
         slug = generate_record_slug(test_date, in_memory_db)
 
-        assert slug == "r_2026-03-14_001", f"First slug should be r_2026-03-14_001, got {slug}"
+        assert slug == "r_2026-03-14_001", (
+            f"First slug should be r_2026-03-14_001, got {slug}"
+        )
 
 
 class TestSlugGenerationSequential:
@@ -58,7 +60,7 @@ class TestSlugGenerationSequential:
             accountId=account.id,
             categoryId=category.id,
             isIncome=False,
-            isTransfer=False
+            isTransfer=False,
         )
         in_memory_db.add(record1)
         in_memory_db.flush()
@@ -73,7 +75,7 @@ class TestSlugGenerationSequential:
             accountId=account.id,
             categoryId=category.id,
             isIncome=False,
-            isTransfer=False
+            isTransfer=False,
         )
         in_memory_db.add(record2)
         in_memory_db.flush()
@@ -88,7 +90,9 @@ class TestSlugGenerationSequential:
 
         slug = generate_record_slug(test_date, in_memory_db)
 
-        assert slug == "r_2026-03-14_003", f"Third slug should be r_2026-03-14_003, got {slug}"
+        assert slug == "r_2026-03-14_003", (
+            f"Third slug should be r_2026-03-14_003, got {slug}"
+        )
 
 
 class TestSlugGenerationDifferentDay:
@@ -121,7 +125,7 @@ class TestSlugGenerationDifferentDay:
             accountId=account.id,
             categoryId=category.id,
             isIncome=False,
-            isTransfer=False
+            isTransfer=False,
         )
         in_memory_db.add(record1)
         in_memory_db.flush()
@@ -168,7 +172,7 @@ class TestSlugGenerationGaps:
             accountId=account.id,
             categoryId=category.id,
             isIncome=False,
-            isTransfer=False
+            isTransfer=False,
         )
         in_memory_db.add(record1)
         in_memory_db.flush()
@@ -181,7 +185,7 @@ class TestSlugGenerationGaps:
             accountId=account.id,
             categoryId=category.id,
             isIncome=False,
-            isTransfer=False
+            isTransfer=False,
         )
         in_memory_db.add(record5)
         in_memory_db.flush()
@@ -194,7 +198,9 @@ class TestSlugGenerationGaps:
 
         slug = generate_record_slug(test_date, in_memory_db)
 
-        assert slug == "r_2026-03-14_006", f"Should fill next available (006), not gap, got {slug}"
+        assert slug == "r_2026-03-14_006", (
+            f"Should fill next available (006), not gap, got {slug}"
+        )
 
 
 class TestSlugGenerationMissingSlugs:
@@ -202,10 +208,10 @@ class TestSlugGenerationMissingSlugs:
 
     def test_handle_records_without_slugs(self, in_memory_db: Session):
         """
-        Given: Old records with no slug field
-        When: generate_record_slug(date, session)
-        Then: Ignores records without slugs
-        And: Returns correct next sequence
+        Given: Records created on a date (the before_insert listener now auto-generates slugs)
+        When: generate_record_slug(date, session) is called after the records exist
+        Then: Returns the next sequence number after the auto-generated slugs
+        And: Sequence numbers are correct and non-colliding
         """
         from bagels.models.record import Record
         from bagels.models.account import Account
@@ -219,20 +225,19 @@ class TestSlugGenerationMissingSlugs:
         in_memory_db.add(category)
         in_memory_db.commit()
 
-        # Create records without slugs (old records)
+        # Create 3 records — the before_insert event listener now auto-assigns slugs
         test_date = date(2026, 3, 14)
 
         for i in range(3):
             record = Record(
-                label=f"Record {i+1}",
+                label=f"Record {i + 1}",
                 amount=100.0 * (i + 1),
                 date=test_date,
                 accountId=account.id,
                 categoryId=category.id,
                 isIncome=False,
-                isTransfer=False
+                isTransfer=False,
             )
-            # Intentionally NOT setting slug (old records)
             in_memory_db.add(record)
 
         in_memory_db.commit()
@@ -242,8 +247,10 @@ class TestSlugGenerationMissingSlugs:
 
         slug = generate_record_slug(test_date, in_memory_db)
 
-        # Should return 001 since no records have slugs
-        assert slug == "r_2026-03-14_001", f"Should ignore records without slugs and return 001, got {slug}"
+        # The 3 records got auto-slugs _001, _002, _003; next should be _004
+        assert slug == "r_2026-03-14_004", (
+            f"Expected _004 after 3 auto-slugged records, got {slug}"
+        )
 
 
 class TestSlugFormatValidation:
@@ -265,7 +272,9 @@ class TestSlugFormatValidation:
         # Regex pattern: r_YYYY-MM-DD_###
         pattern = r"^r_\d{4}-\d{2}-\d{2}_\d{3}$"
 
-        assert re.match(pattern, slug), f"Slug {slug} doesn't match pattern r_YYYY-MM-DD_###"
+        assert re.match(pattern, slug), (
+            f"Slug {slug} doesn't match pattern r_YYYY-MM-DD_###"
+        )
 
         # Also verify the date part is correct
         assert "2026-03-14" in slug, f"Slug should contain date 2026-03-14, got {slug}"

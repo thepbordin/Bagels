@@ -174,6 +174,22 @@ def _sync_database_schema():
         raise Exception(f"Failed to sync database schema: {str(e)}")
 
 
+def _backfill_record_slugs(session):
+    """Generate slugs for any records that have slug IS NULL."""
+    from bagels.export.slug_generator import generate_record_slug
+
+    null_slug_records = session.query(Record).filter(Record.slug.is_(None)).all()
+    for record in null_slug_records:
+        record_date = record.date
+        if record_date is None:
+            record_date = datetime.now()
+        if isinstance(record_date, datetime):
+            record_date = record_date.date()
+        record.slug = generate_record_slug(record_date, session)
+    if null_slug_records:
+        session.commit()
+
+
 def init_db():
     # Reconnect on every init to avoid stale handles to temp DBs removed by tests.
     _ensure_engine_current(force_reconnect=True)
@@ -183,6 +199,7 @@ def init_db():
     _create_outside_source_account(session)
     _create_default_categories(session)
     _fix_dangling_categories(session)
+    _backfill_record_slugs(session)
     session.close()
 
 
