@@ -1,26 +1,38 @@
-# Bagels CLI — LLM Reference
+---
+name: bagels-finance
+description: Interacting with the Bagels personal finance tracker via its CLI. Use this when users want to track expenses, manage accounts, analyze spending, add records, or get financial summaries. Bagels is a local-first SQLite-backed finance tool with both a TUI and a non-interactive CLI suitable for LLM use.
+---
 
 Bagels is a local-first personal finance tracker backed by SQLite. The CLI provides non-interactive, structured-output commands safe for LLM use via Bash tool. Running `bagels` with no subcommand launches the interactive TUI (not for LLM use).
 
----
+This happens in two steps:
+1. Gather financial context (read operations)
+2. Perform mutations (create/update/delete records, accounts, categories, etc.)
 
-## Global Flags
+First, undertake this task:
 
-These flags are placed **before** any subcommand.
+## GATHERING FINANCIAL CONTEXT
 
-| Flag | Type | Description |
-|------|------|-------------|
-| `--at PATH` | path | Override data/config root directory. Place before any subcommand. |
+To begin, always start by gathering the user's financial context before performing any actions.
 
-Example: `bagels --at /path/to/project llm context --month 2026-03`
+### THE CRITICAL UNDERSTANDING
+- What is received: A user request about their finances — spending analysis, record entry, budget check, etc.
+- What to do first: Use `bagels llm context` to get a complete financial snapshot.
+- What happens next: Use the snapshot to inform all subsequent commands — correct account IDs, category slugs, date ranges, and amounts.
 
----
+The context dump is **the single most important command**. It gives you everything: accounts, categories, budgets, recent records, and spending summaries — all in one call.
 
-## LLM Entry Point — `bagels llm context`
+### HOW TO GATHER CONTEXT
 
-**Purpose:** Dump a complete financial snapshot as YAML to stdout. This is the single best command for getting full financial context in one call.
+**Use `bagels llm context`** to get a full financial snapshot:
 
-**Mutual exclusion:** Only one of `--month`, `--period`, or `--days` may be specified at a time. Defaults to current month if none specified.
+```bash
+bagels llm context --month 2026-03
+bagels llm context --period 30d
+bagels llm context --days 14
+```
+
+**Mutual exclusion:** Only one of `--month`, `--period`, or `--days` may be specified. Defaults to current month if none given.
 
 | Flag | Short | Type | Default | Description |
 |------|-------|------|---------|-------------|
@@ -30,22 +42,29 @@ Example: `bagels --at /path/to/project llm context --month 2026-03`
 
 **Output includes:** snapshot_date, period, accounts, summary (income/expenses/net/record_count), spending_by_category, recent_records (capped at 30), budget_status, categories.
 
+**recent_records fields:** id (slug), label, amount, net_amount (amount minus split totals), date, is_income, is_transfer, category, account, splits (list of {person, amount, is_paid, paid_date}).
+
+**Global `--at` flag:** Override the data/config root directory. Place **before** any subcommand:
 ```bash
-bagels llm context --month 2026-03
-bagels llm context --period 30d
-bagels llm context --days 14
-bagels --at ./work-finances llm context --month 2026-03
+bagels --at /path/to/project llm context --month 2026-03
 ```
+
+### ESSENTIAL PRINCIPLES
+- **CONTEXT FIRST**: Always call `bagels llm context` before performing mutations — you need valid IDs and slugs.
+- **MACHINE-READABLE OUTPUT**: Always use `--format yaml` or `--format json` on query commands.
+- **IDENTIFIERS**: All CRUD commands accept either integer IDs or slug strings as identifiers.
+- **NON-INTERACTIVE**: Provide all required flags to avoid interactive prompts. Use `--force` on deletes.
+- **SINGLE SOURCE OF TRUTH**: The SQLite database is local-first. There is no cloud sync.
 
 ---
 
-## Schema Commands
+## SCHEMA INSPECTION
+
+**CRITICAL STEP**: Before writing mutation YAML or creating records, inspect the schema to know all valid field names.
 
 ### `bagels schema full`
 
-**Purpose:** Output full YAML schema for all models (Account, Category, Person, Record, RecordTemplate).
-
-No flags.
+Output full YAML schema for all models (Account, Category, Person, Record, RecordTemplate). No flags.
 
 ```bash
 bagels schema full
@@ -53,7 +72,7 @@ bagels schema full
 
 ### `bagels schema model MODEL_NAME`
 
-**Purpose:** Output schema for a single model in YAML or JSON.
+Output schema for a single model.
 
 | Argument/Flag | Type | Default | Description |
 |---------------|------|---------|-------------|
@@ -63,34 +82,32 @@ bagels schema full
 ```bash
 bagels schema model record
 bagels schema model record --format json
-bagels schema model account
 ```
 
 ---
 
-## Query Commands
+## QUERY COMMANDS
 
-All query commands support `--format/-f (table|json|yaml)`. Use `--format yaml` or `--format json` for machine-readable output.
+All query commands support `--format/-f (table|json|yaml)`. **Always use `--format yaml` or `--format json`** for machine-readable output.
 
-### `bagels summary`
+### Summary
 
-**Purpose:** Summarize income, expenses, and net savings for a month.
+**`bagels summary`** — Summarize income, expenses, and net savings for a month.
 
 | Flag | Short | Type | Default | Description |
 |------|-------|------|---------|-------------|
 | `--month` | `-m` | `YYYY-MM` | current month | Month to summarize |
 | `--format` | `-f` | `table\|json\|yaml` | `table` | Output format |
 
-**Output fields (json/yaml):** month, total_income, total_expenses, net_savings, record_count.
+**Output fields:** month, total_income, total_expenses, net_savings, record_count.
 
 ```bash
 bagels summary --month 2026-03 --format yaml
-bagels summary --format json
 ```
 
-### `bagels records list`
+### Records List
 
-**Purpose:** List expense/income records with optional filters.
+**`bagels records list`** — List expense/income records with optional filters.
 
 | Flag | Short | Type | Default | Description |
 |------|-------|------|---------|-------------|
@@ -105,18 +122,17 @@ bagels summary --format json
 | `--limit` | — | int | `50` | Max records to return |
 | `--all` | — | flag | — | Disable limit, return all matches |
 
-**Note:** Only non-transfer records returned (transferToAccountId IS NULL). Results ordered by date descending.
+**Note:** Only non-transfer records returned. Results ordered by date descending.
 
 ```bash
 bagels records list --month 2026-03 --format yaml
 bagels records list --category food --limit 20 --format json
 bagels records list --date-from 2026-01-01 --date-to 2026-03-31 --all --format json
-bagels records list --amount 100..500 --account "Kasikorn Checking"
 ```
 
-### `bagels records show RECORD_ID`
+### Records Show
 
-**Purpose:** Show details of a single record by ID or slug.
+**`bagels records show RECORD_ID`** — Show details of a single record by ID or slug.
 
 | Argument/Flag | Type | Default | Description |
 |---------------|------|---------|-------------|
@@ -128,76 +144,71 @@ bagels records show r_2026-03-14_001 --format yaml
 bagels records show 42 --format json
 ```
 
-### `bagels accounts list`
+### Accounts List
 
-**Purpose:** List all visible accounts.
+**`bagels accounts list`** — List all visible accounts. Hidden accounts are excluded.
 
 | Flag | Short | Type | Default | Description |
 |------|-------|------|---------|-------------|
 | `--format` | `-f` | `table\|json\|yaml` | `table` | Output format |
-
-**Note:** Hidden accounts (hidden=true) are excluded from output.
 
 ```bash
 bagels accounts list --format yaml
-bagels accounts list --format json
 ```
 
-### `bagels categories tree`
+### Categories Tree
 
-**Purpose:** Output the full category tree.
+**`bagels categories tree`** — Output the full category tree.
 
 | Flag | Short | Type | Default | Description |
 |------|-------|------|---------|-------------|
 | `--format` | `-f` | `table\|json\|yaml` | `table` | Output format |
 
-**Output fields (json/yaml):** id, name, nature, color, depth, parent_id.
+**Output fields:** id, name, nature, color, depth, parent_id.
 
 ```bash
 bagels categories tree --format yaml
-bagels categories tree --format json
 ```
 
-### `bagels spending by-category`
+### Spending by Category
 
-**Purpose:** Break down spending totals by category for a month.
+**`bagels spending by-category`** — Break down spending totals by category for a month.
 
 | Flag | Short | Type | Default | Description |
 |------|-------|------|---------|-------------|
 | `--month` | `-m` | `YYYY-MM` | current month | Month to analyze |
 | `--format` | `-f` | `table\|json\|yaml` | `table` | Output format |
 
-**Output fields (json/yaml):** month, total, categories [{category, amount, percentage}].
+**Output fields:** month, total, categories [{category, amount, percentage}].
 
 ```bash
 bagels spending by-category --month 2026-03 --format yaml
-bagels spending by-category --format json
 ```
 
-### `bagels spending by-day`
+### Spending by Day
 
-**Purpose:** Break down daily spending totals for a month.
+**`bagels spending by-day`** — Break down daily spending totals for a month.
 
 | Flag | Short | Type | Default | Description |
 |------|-------|------|---------|-------------|
 | `--month` | `-m` | `YYYY-MM` | current month | Month to analyze |
 | `--format` | `-f` | `table\|json\|yaml` | `table` | Output format |
 
-**Output fields (json/yaml):** month, total, daily_average, days [{date, amount}].
+**Output fields:** month, total, daily_average, days [{date, amount}].
 
 ```bash
 bagels spending by-day --month 2026-03 --format yaml
 ```
 
-### `bagels trends`
+### Trends
 
-**Purpose:** Compare monthly financial trends over multiple months.
+**`bagels trends`** — Compare monthly financial trends over multiple months.
 
-**Note:** `--months` (plural, int 1-12) means "how many months of history" — this is NOT the same as `--month YYYY-MM` on other commands.
+**Note:** `--months` (plural, int 1-12) means "how many months of history" — NOT the same as `--month YYYY-MM` on other commands.
 
 | Flag | Short | Type | Default | Description |
 |------|-------|------|---------|-------------|
-| `--months` | `-m` | int (1–12) | `3` | Number of months of history to compare |
+| `--months` | `-m` | int (1–12) | `3` | Number of months of history |
 | `--category` | `-c` | string | — | Filter to a specific category name |
 | `--format` | `-f` | `table\|json\|yaml` | `table` | Output format |
 
@@ -212,37 +223,59 @@ bagels trends --months 3 --category food --format json
 
 ---
 
-## Mutation Commands
+## MUTATION COMMANDS
 
-### `bagels records add`
+With context gathered AND schema inspected, perform mutations. Always provide all required flags to avoid interactive prompts.
 
-**Purpose:** Add a record using inline flags or batch-import from a YAML file.
+### ⚠️ STEP 0: GATHER CONTEXT FIRST ⚠️
+**CRITICAL: BEFORE writing any mutation commands:**
 
-**Inline mode (no `--yaml`):** Creates a single record from flags. Missing required fields are prompted interactively.
+1. **Run** `bagels llm context` to get valid account IDs, category slugs, and current state
+2. **Run** `bagels schema model record` if creating records via YAML to verify field names
+3. **Run** `bagels accounts list --format yaml` and `bagels categories tree --format yaml` to get valid slugs
+4. **Provide all required flags** to prevent interactive prompts
+
+**Avoid:**
+- ❌ Guessing account IDs or category IDs without checking first
+- ❌ Omitting required fields (triggers interactive prompts)
+- ❌ Using `--force` on deletes without confirming with the user first
+
+**Follow these practices:**
+- ✅ Always gather context before mutations
+- ✅ Use slugs from `accounts list` and `categories tree` in YAML batch imports
+- ✅ Validate YAML structure before calling `records add --yaml`
+- ✅ Use `--format yaml` or `--format json` on create/update commands to confirm results
+
+---
+
+### Records Add (Inline)
+
+**`bagels records add`** — Add a single record using inline flags.
 
 | Flag | Type | Description |
 |------|------|-------------|
 | `--label` | string | Record label/description |
 | `--amount` | float | Amount (must be > 0) |
-| `--date` | `YYYY-MM-DD` | Record date (defaults to today if prompted) |
+| `--date` | `YYYY-MM-DD` | Record date (defaults to today) |
 | `--account-id` | int | Account ID |
 | `--category-id` | int | Category ID (optional) |
 | `--person-id` | int | Person ID (optional) |
 | `--income` | flag | Mark as income record |
 | `--transfer` | flag | Mark as transfer |
 | `--transfer-to-account-id` | int | Destination account ID for transfers |
+| `--split` | str (repeatable) | Add split as person_slug:amount (e.g. --split alice:30) |
 | `--format` / `-f` | `table\|json\|yaml` | Output format (default: table) |
 
 ```bash
 bagels records add --label "Lunch" --amount 245 --date 2026-03-22 --account-id 1
 bagels records add --label "Salary" --amount 50000 --account-id 1 --income
+# Add a record with splits
+bagels records add --label "Dinner" --amount 100 --account-id 1 --date 2026-03-27 --split alice:30 --split bob:20
 ```
 
-**Batch mode (`--yaml PATH`):** Import one or more records from a YAML file.
+### Records Add (Batch YAML)
 
-| Flag | Type | Description |
-|------|------|-------------|
-| `--yaml PATH` | file path (must exist) | YAML file containing records to import |
+**`bagels records add --yaml PATH`** — Import one or more records from a YAML file.
 
 **Accepted YAML formats:**
 - List of dicts: `[{label, amount, date, ...}, ...]`
@@ -253,7 +286,7 @@ bagels records add --label "Salary" --amount 50000 --account-id 1 --income
 
 **Optional fields per record:** `accountSlug` (string), `categorySlug` (string), `personSlug` (string), `isIncome` (bool, default false), `isTransfer` (bool, default false)
 
-**WARNING:** May prompt interactively if some records fail validation. Pre-validate YAML before calling.
+**WARNING:** May prompt interactively if records fail validation. Pre-validate YAML structure before calling.
 
 ```bash
 cat > /tmp/new-record.yaml << 'EOF'
@@ -267,9 +300,9 @@ EOF
 bagels records add --yaml /tmp/new-record.yaml
 ```
 
-### `bagels records update IDENTIFIER`
+### Records Update
 
-**Purpose:** Update an existing record by integer ID or slug.
+**`bagels records update IDENTIFIER`** — Update an existing record by integer ID or slug.
 
 | Argument/Flag | Type | Default | Description |
 |---------------|------|---------|-------------|
@@ -290,9 +323,9 @@ bagels records update 42 --amount 300 --format json
 bagels records update r_2026-03-22_001 --label "Updated label"
 ```
 
-### `bagels records delete IDENTIFIER`
+### Records Delete
 
-**Purpose:** Delete a record by integer ID or slug. Hard delete.
+**`bagels records delete IDENTIFIER`** — Hard-delete a record by integer ID or slug.
 
 | Argument/Flag | Type | Default | Description |
 |---------------|------|---------|-------------|
@@ -306,329 +339,269 @@ bagels records delete r_2026-03-22_001
 
 ---
 
-## Entity CRUD Commands
+## ENTITY CRUD COMMANDS
+
+These follow a consistent pattern: `bagels <entity> (list|show|add|update|delete)`.
 
 ### Accounts
 
-#### `bagels accounts add`
-
-**Purpose:** Create a new account.
+**`bagels accounts add`** — Create a new account.
 
 | Flag | Type | Description |
 |------|------|-------------|
-| `--name` | string | Account name (prompted if missing) |
-| `--balance` | float | Beginning balance (prompted if missing) |
+| `--name` | string | Account name |
+| `--balance` | float | Beginning balance |
 | `--description` | string | Account description (optional) |
 | `--hidden` | flag | Mark account as hidden |
-| `--format` / `-f` | `table\|json\|yaml` | Output format (default: table) |
+| `--format` / `-f` | `table\|json\|yaml` | Output format |
 
 ```bash
 bagels accounts add --name "Savings" --balance 10000
-bagels accounts add --name "Cash" --balance 0 --format json
 ```
 
-#### `bagels accounts show IDENTIFIER`
-
-**Purpose:** Show details for a single account.
-
-| Argument/Flag | Type | Default | Description |
-|---------------|------|---------|-------------|
-| `IDENTIFIER` | positional string | required | Integer ID or slug |
-| `--format` / `-f` | `table\|json\|yaml` | `table` | Output format |
+**`bagels accounts show IDENTIFIER`** — Show details for a single account.
 
 ```bash
 bagels accounts show 1 --format json
 bagels accounts show acc_savings
 ```
 
-#### `bagels accounts update IDENTIFIER`
+**`bagels accounts update IDENTIFIER`** — Update an existing account.
 
-**Purpose:** Update an existing account.
-
-| Argument/Flag | Type | Default | Description |
-|---------------|------|---------|-------------|
-| `IDENTIFIER` | positional string | required | Integer ID or slug |
-| `--name` | string | — | New account name |
-| `--balance` | float | — | New beginning balance |
-| `--description` | string | — | New account description |
-| `--hidden/--no-hidden` | flag | — | Set account visibility |
-| `--format` / `-f` | `table\|json\|yaml` | `table` | Output format |
+| Argument/Flag | Type | Description |
+|---------------|------|-------------|
+| `IDENTIFIER` | positional string | Integer ID or slug |
+| `--name` | string | New account name |
+| `--balance` | float | New beginning balance |
+| `--description` | string | New account description |
+| `--hidden/--no-hidden` | flag | Set account visibility |
+| `--format` / `-f` | `table\|json\|yaml` | Output format |
 
 ```bash
 bagels accounts update 1 --name "New Savings"
-bagels accounts update 1 --hidden --format yaml
 ```
 
-#### `bagels accounts delete IDENTIFIER`
+**`bagels accounts delete IDENTIFIER`** — Soft-delete an account.
 
-**Purpose:** Soft-delete an account.
+**Note:** `--cascade` soft-deletes all linked records. Without `--cascade`, delete is blocked if linked records exist.
 
-**Note:** Soft delete. `--cascade` soft-deletes all linked records. Without `--cascade`, delete is blocked if linked records exist.
-
-| Argument/Flag | Type | Default | Description |
-|---------------|------|---------|-------------|
-| `IDENTIFIER` | positional string | required | Integer ID or slug |
-| `--force` | flag | — | Skip confirmation prompt |
-| `--cascade` | flag | — | Soft-delete all linked records |
+| Argument/Flag | Type | Description |
+|---------------|------|-------------|
+| `IDENTIFIER` | positional string | Integer ID or slug |
+| `--force` | flag | Skip confirmation prompt |
+| `--cascade` | flag | Soft-delete all linked records |
 
 ```bash
 bagels accounts delete 1 --force
 bagels accounts delete 1 --cascade --force
 ```
 
----
-
 ### Categories
 
-#### `bagels categories list`
-
-**Purpose:** List all categories.
-
-| Flag | Short | Type | Default | Description |
-|------|-------|------|---------|-------------|
-| `--format` | `-f` | `table\|json\|yaml` | `table` | Output format |
+**`bagels categories list`** — List all categories.
 
 ```bash
 bagels categories list --format yaml
 ```
 
-#### `bagels categories show IDENTIFIER`
-
-**Purpose:** Show details for a single category.
-
-| Argument/Flag | Type | Default | Description |
-|---------------|------|---------|-------------|
-| `IDENTIFIER` | positional string | required | Integer ID or slug |
-| `--format` / `-f` | `table\|json\|yaml` | `table` | Output format |
+**`bagels categories show IDENTIFIER`** — Show details for a single category.
 
 ```bash
 bagels categories show 5 --format json
 ```
 
-#### `bagels categories add`
-
-**Purpose:** Create a new category.
+**`bagels categories add`** — Create a new category.
 
 | Flag | Type | Description |
 |------|------|-------------|
-| `--name` | string | Category name (prompted if missing) |
-| `--nature` | `Want\|Need\|Must` | Category nature (prompted if missing) |
+| `--name` | string | Category name |
+| `--nature` | `Want\|Need\|Must` | Category nature |
 | `--color` | string | Hex color (e.g., `#FF5733`) |
 | `--parent-id` | int | Parent category ID (optional) |
-| `--format` / `-f` | `table\|json\|yaml` | Output format (default: table) |
+| `--format` / `-f` | `table\|json\|yaml` | Output format |
 
 ```bash
 bagels categories add --name "Dining Out" --nature Need --parent-id 5
 bagels categories add --name "Salary" --nature Must
 ```
 
-#### `bagels categories update IDENTIFIER`
+**`bagels categories update IDENTIFIER`** — Update an existing category.
 
-**Purpose:** Update an existing category.
-
-| Argument/Flag | Type | Default | Description |
-|---------------|------|---------|-------------|
-| `IDENTIFIER` | positional string | required | Integer ID or slug |
-| `--name` | string | — | New category name |
-| `--nature` | `Want\|Need\|Must` | — | New category nature |
-| `--color` | string | — | New hex color |
-| `--parent-id` | int | — | New parent category ID |
-| `--format` / `-f` | `table\|json\|yaml` | `table` | Output format |
+| Argument/Flag | Type | Description |
+|---------------|------|-------------|
+| `IDENTIFIER` | positional string | Integer ID or slug |
+| `--name` | string | New category name |
+| `--nature` | `Want\|Need\|Must` | New category nature |
+| `--color` | string | New hex color |
+| `--parent-id` | int | New parent category ID |
+| `--format` / `-f` | `table\|json\|yaml` | Output format |
 
 ```bash
 bagels categories update 5 --name "Food & Dining"
 ```
 
-#### `bagels categories delete IDENTIFIER`
+**`bagels categories delete IDENTIFIER`** — Delete a category.
 
-**Purpose:** Delete a category.
-
-**Note:** Use `--cascade` to also soft-delete linked records. Subcategories are not automatically deleted.
-
-| Argument/Flag | Type | Default | Description |
-|---------------|------|---------|-------------|
-| `IDENTIFIER` | positional string | required | Integer ID or slug |
-| `--force` | flag | — | Skip confirmation prompt |
-| `--cascade` | flag | — | Soft-delete all linked records |
+**Note:** `--cascade` soft-deletes linked records. Subcategories are NOT automatically deleted.
 
 ```bash
 bagels categories delete 5 --force
 bagels categories delete 5 --cascade
 ```
 
----
-
 ### Persons
 
-#### `bagels persons list`
-
-**Purpose:** List all persons.
-
-| Flag | Short | Type | Default | Description |
-|------|-------|------|---------|-------------|
-| `--format` | `-f` | `table\|json\|yaml` | `table` | Output format |
+**`bagels persons list`** — List all persons.
 
 ```bash
 bagels persons list --format yaml
 ```
 
-#### `bagels persons add`
-
-**Purpose:** Create a new person.
-
-| Flag | Type | Description |
-|------|------|-------------|
-| `--name` | string | Person name (prompted if missing) |
-| `--format` / `-f` | `table\|json\|yaml` | Output format (default: table) |
+**`bagels persons add`** — Create a new person.
 
 ```bash
 bagels persons add --name "Alice"
 ```
 
-#### `bagels persons show IDENTIFIER`
-
-**Purpose:** Show details for a single person.
-
-| Argument/Flag | Type | Default | Description |
-|---------------|------|---------|-------------|
-| `IDENTIFIER` | positional string | required | Integer ID or slug |
-| `--format` / `-f` | `table\|json\|yaml` | `table` | Output format |
+**`bagels persons show IDENTIFIER`** — Show details for a single person.
 
 ```bash
 bagels persons show 1 --format json
 ```
 
-#### `bagels persons update IDENTIFIER`
-
-**Purpose:** Update an existing person.
-
-| Argument/Flag | Type | Default | Description |
-|---------------|------|---------|-------------|
-| `IDENTIFIER` | positional string | required | Integer ID or slug |
-| `--name` | string | — | New person name |
-| `--format` / `-f` | `table\|json\|yaml` | `table` | Output format |
+**`bagels persons update IDENTIFIER`** — Update an existing person.
 
 ```bash
 bagels persons update 1 --name "Bob"
 ```
 
-#### `bagels persons delete IDENTIFIER`
-
-**Purpose:** Delete a person.
-
-**Note:** Use `--cascade` to soft-delete linked records (via splits).
-
-| Argument/Flag | Type | Default | Description |
-|---------------|------|---------|-------------|
-| `IDENTIFIER` | positional string | required | Integer ID or slug |
-| `--force` | flag | — | Skip confirmation prompt |
-| `--cascade` | flag | — | Soft-delete linked records |
+**`bagels persons delete IDENTIFIER`** — Delete a person. `--cascade` soft-deletes linked records (via splits).
 
 ```bash
 bagels persons delete 1 --force
 bagels persons delete 1 --cascade
 ```
 
----
-
 ### Templates
 
-#### `bagels templates list`
-
-**Purpose:** List all record templates.
-
-| Flag | Short | Type | Default | Description |
-|------|-------|------|---------|-------------|
-| `--format` | `-f` | `table\|json\|yaml` | `table` | Output format |
+**`bagels templates list`** — List all record templates.
 
 ```bash
 bagels templates list --format yaml
 ```
 
-#### `bagels templates add`
-
-**Purpose:** Create a new record template.
+**`bagels templates add`** — Create a new record template.
 
 | Flag | Type | Description |
 |------|------|-------------|
-| `--label` | string | Template label (prompted if missing) |
-| `--amount` | float | Template amount (prompted if missing) |
-| `--account-id` | int | Account ID (prompted if missing) |
+| `--label` | string | Template label |
+| `--amount` | float | Template amount |
+| `--account-id` | int | Account ID |
 | `--category-id` | int | Category ID (optional) |
 | `--income` | flag | Mark as income |
 | `--transfer` | flag | Mark as transfer |
 | `--transfer-to-account-id` | int | Transfer target account ID |
-| `--format` / `-f` | `table\|json\|yaml` | Output format (default: table) |
+| `--format` / `-f` | `table\|json\|yaml` | Output format |
 
 ```bash
 bagels templates add --label "Rent" --amount 15000 --account-id 1
 bagels templates add --label "Salary" --amount 50000 --account-id 1 --income
 ```
 
-#### `bagels templates show IDENTIFIER`
-
-**Purpose:** Show details for a single template.
-
-| Argument/Flag | Type | Default | Description |
-|---------------|------|---------|-------------|
-| `IDENTIFIER` | positional string | required | Integer ID or slug |
-| `--format` / `-f` | `table\|json\|yaml` | `table` | Output format |
+**`bagels templates show IDENTIFIER`** — Show details for a single template.
 
 ```bash
 bagels templates show 1 --format json
 ```
 
-#### `bagels templates update IDENTIFIER`
+**`bagels templates update IDENTIFIER`** — Update an existing record template.
 
-**Purpose:** Update an existing record template.
-
-| Argument/Flag | Type | Default | Description |
-|---------------|------|---------|-------------|
-| `IDENTIFIER` | positional string | required | Integer ID or slug |
-| `--label` | string | — | New template label |
-| `--amount` | float | — | New amount |
-| `--account-id` | int | — | New account ID |
-| `--category-id` | int | — | New category ID |
-| `--income/--no-income` | flag | — | Set income flag |
-| `--transfer/--no-transfer` | flag | — | Set transfer flag |
-| `--transfer-to-account-id` | int | — | New transfer target account ID |
-| `--format` / `-f` | `table\|json\|yaml` | `table` | Output format |
+| Argument/Flag | Type | Description |
+|---------------|------|-------------|
+| `IDENTIFIER` | positional string | Integer ID or slug |
+| `--label` | string | New template label |
+| `--amount` | float | New amount |
+| `--account-id` | int | New account ID |
+| `--category-id` | int | New category ID |
+| `--income/--no-income` | flag | Set income flag |
+| `--transfer/--no-transfer` | flag | Set transfer flag |
+| `--transfer-to-account-id` | int | New transfer target account ID |
+| `--format` / `-f` | `table\|json\|yaml` | Output format |
 
 ```bash
 bagels templates update 1 --amount 16000
 ```
 
-#### `bagels templates delete IDENTIFIER`
-
-**Purpose:** Hard-delete a record template.
-
-**Note:** Templates are permanently deleted (hard delete).
-
-| Argument/Flag | Type | Default | Description |
-|---------------|------|---------|-------------|
-| `IDENTIFIER` | positional string | required | Integer ID or slug |
-| `--force` | flag | — | Skip confirmation prompt |
+**`bagels templates delete IDENTIFIER`** — Hard-delete a record template.
 
 ```bash
 bagels templates delete 1 --force
 ```
 
+### Splits
+
+Manage expense splits on records. Splits track shared expenses — who owes what portion of a record.
+
+#### `bagels splits add RECORD_ID`
+
+Add a split to an existing record.
+
+| Flag | Short | Type | Default | Description |
+|------|-------|------|---------|-------------|
+| `--person` | `-p` | str | required | Person slug or integer ID |
+| `--amount` | `-a` | float | required | Split amount |
+| `--format` | `-f` | `table\|json\|yaml` | `table` | Output format |
+
+```bash
+bagels splits add r_2026-03-27_001 --person alice --amount 30
+bagels splits add 42 -p bob -a 20
+```
+
+#### `bagels splits list RECORD_ID`
+
+List all splits for a record.
+
+| Flag | Short | Type | Default | Description |
+|------|-------|------|---------|-------------|
+| `--format` | `-f` | `table\|json\|yaml` | `table` | Output format |
+
+```bash
+bagels splits list r_2026-03-27_001
+```
+
+#### `bagels splits mark-paid SPLIT_ID`
+
+Mark a split as paid (sets isPaid=True, paidDate=today).
+
+```bash
+bagels splits mark-paid 5
+```
+
+#### `bagels splits delete SPLIT_ID`
+
+Delete a split. Shows confirmation prompt; use `--force` to skip.
+
+| Flag | Short | Type | Default | Description |
+|------|-------|------|---------|-------------|
+| `--force` | — | flag | false | Skip confirmation prompt |
+
+```bash
+bagels splits delete 5
+bagels splits delete 5 --force
+```
+
 ---
 
-## Utility Commands
+## UTILITY COMMANDS
 
-### `bagels init`
-
-**Purpose:** Initialize config, data directory, and SQLite database. No flags.
+**`bagels init`** — Initialize config, data directory, and SQLite database.
 
 ```bash
 bagels init
 bagels --at ./my-instance init
 ```
 
-### `bagels locate (config|database)`
-
-**Purpose:** Print the path to the config file or database file.
+**`bagels locate (config|database)`** — Print the path to the config or database file.
 
 ```bash
 bagels locate config
@@ -637,11 +610,11 @@ bagels locate database
 
 ---
 
-## Workflow Patterns
+## WORKFLOW PATTERNS
 
 ### 1. Monthly Financial Snapshot
 
-**When:** Get a complete picture of one month's finances.
+**When:** Get a complete picture of one month's finances in one call.
 
 ```bash
 bagels llm context --month 2026-03
@@ -649,7 +622,7 @@ bagels llm context --month 2026-03
 
 ### 2. Spending Analysis
 
-**When:** Analyze spending patterns for a month with detailed records and category breakdown.
+**When:** Analyze spending patterns with detailed records and category breakdown.
 
 ```bash
 bagels records list --month 2026-03 --format yaml
@@ -665,11 +638,16 @@ bagels summary --month 2026-03 --format yaml
 bagels categories tree --format yaml
 ```
 
-### 4. Add a Record from LLM (Batch YAML)
+### 4. Add Records from LLM (Batch YAML)
 
-**When:** Create expense records from natural language user intent using YAML file.
+**When:** Create expense records from natural language user intent.
 
 ```bash
+# 1. Get valid slugs
+bagels accounts list --format yaml
+bagels categories tree --format yaml
+
+# 2. Write YAML file
 cat > /tmp/new-record.yaml << 'EOF'
 - label: "Lunch at MBK"
   amount: 245.00
@@ -678,10 +656,12 @@ cat > /tmp/new-record.yaml << 'EOF'
   categorySlug: "food-dining-out"
   isIncome: false
 EOF
+
+# 3. Import
 bagels records add --yaml /tmp/new-record.yaml
 ```
 
-### 5. Create a Record from CLI Flags
+### 5. Quick Single Record from CLI Flags
 
 **When:** Quickly add a single expense/income without a YAML file.
 
@@ -691,16 +671,51 @@ bagels categories tree --format yaml  # get category IDs
 bagels records add --label "Coffee" --amount 120 --date 2026-03-22 --account-id 1 --category-id 3
 ```
 
+### 6. Expense Splitting
+
+**When:** Track shared expenses with multiple people owing portions of a record.
+
+```bash
+# 1. Create a shared expense with splits
+bagels records add --label "Group dinner" --amount 100 --account-id 1 --split alice:30 --split bob:20
+
+# 2. View splits on a record
+bagels splits list r_2026-03-27_001
+
+# 3. Mark a split as paid when someone pays you back
+bagels splits mark-paid 5
+
+# 4. Add a split to an existing record
+bagels splits add r_2026-03-27_001 --person charlie --amount 15
+
+# 5. Remove a split
+bagels splits delete 6 --force
+```
+
 ---
 
-## Tips
+## THE OPERATIONAL PROCESS
 
-- Use `--format yaml` or `--format json` on any query command for machine-readable output.
-- The `--at` flag goes before the subcommand: `bagels --at /path llm context`.
-- `bagels llm context` is the single best command for getting full financial context in one call.
-- `bagels schema full` orients you to all field names before writing mutation YAML.
-- `bagels accounts list --format yaml` and `bagels categories tree --format yaml` give you valid slugs to use in `records add` YAML.
-- `IDENTIFIER` in CRUD commands accepts either integer ID or slug string.
-- All create/update commands support `--format` for output format.
-- Delete commands prompt for confirmation by default; use `--force` to skip.
-- `--cascade` on delete also removes linked records (soft-delete). Records themselves are hard-deleted (exception to soft-delete pattern).
+**User request** → **Gather context** → **Perform action**
+
+Each request follows this pattern:
+
+1. **Interpret the user's intent** — What financial operation is being requested?
+2. **Gather context** (`bagels llm context`) — Get the current financial state, valid IDs, and slugs
+3. **Inspect schema if needed** (`bagels schema model record`) — Verify field names before mutations
+4. **Execute the operation** — Run the appropriate query or mutation commands
+5. **Confirm results** — Use `--format yaml` on mutations to verify the outcome
+
+**The constants:**
+- Always gather context first
+- Always use `--format yaml` or `--format json` for machine-readable output
+- Always provide all required flags to avoid interactive prompts
+- The `--at` flag goes **before** the subcommand
+
+**Key behaviors:**
+- `IDENTIFIER` in CRUD commands accepts either integer ID or slug string
+- All create/update commands support `--format` for output format
+- Delete commands prompt for confirmation by default; use `--force` to skip
+- `--cascade` on entity deletes also removes linked records (soft-delete)
+- Record deletes are hard deletes (permanent)
+- Templates deletes are also hard deletes

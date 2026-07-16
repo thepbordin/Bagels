@@ -169,10 +169,12 @@ def _get_records_context(session, month, period, days):
 
         # Query records using the provided session with eager loading
         from bagels.models.record import Record as RecordModel
+        from bagels.models.split import Split as SplitModel
 
         query = session.query(RecordModel).options(
             joinedload(RecordModel.category),
             joinedload(RecordModel.account),
+            joinedload(RecordModel.splits).joinedload(SplitModel.person),
         )
         if start_date is not None:
             query = query.filter(RecordModel.date >= start_date)
@@ -186,14 +188,30 @@ def _get_records_context(session, month, period, days):
 
         return [
             {
-                "id": rec.slug if rec.slug else rec.id,
+                "id": rec.slug if rec.slug else str(rec.id),
                 "label": rec.label,
                 "amount": rec.amount,
+                "net_amount": rec.amount - sum(s.amount for s in rec.splits)
+                if rec.splits
+                else rec.amount,
                 "date": rec.date.isoformat() if rec.date else None,
                 "is_income": rec.isIncome,
                 "is_transfer": rec.isTransfer,
                 "category": rec.category.name if rec.category else None,
                 "account": rec.account.name if rec.account else None,
+                "splits": [
+                    {
+                        "person": s.person.name if s.person else None,
+                        "amount": s.amount,
+                        "is_paid": s.isPaid,
+                        "paid_date": s.paidDate.strftime("%Y-%m-%d")
+                        if s.paidDate
+                        else None,
+                    }
+                    for s in rec.splits
+                ]
+                if rec.splits
+                else [],
             }
             for rec in recent_records
         ]
