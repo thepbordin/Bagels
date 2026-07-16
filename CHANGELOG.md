@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Added a scriptable CLI for accounts, categories, persons, records, templates, summaries, spending, trends, and schemas.
+- Added record slugs so records can be referenced without memorizing database IDs.
+- Added split management with `bagels splits` and repeatable `records add --split` flags.
+- Added split-aware record output and LLM context, including each split and the net amount.
+- Added YAML/JSON import and export support plus structured table, JSON, and YAML output.
+- Added CLI, integration, import/export, and regression test coverage for the new workflows.
+
 ## 0.3.12
 
 - Sort people in manager page by net due
