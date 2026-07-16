@@ -8,6 +8,7 @@
 - Added split-aware record output and LLM context, including each split and the net amount.
 - Added YAML/JSON import and export support plus structured table, JSON, and YAML output.
 - Added CLI, integration, import/export, and regression test coverage for the new workflows.
+- Published the `bagels-finance` agent skill for installation with `npx skills@latest add thepbordin/bagels`.
 
 ## 0.3.12
 

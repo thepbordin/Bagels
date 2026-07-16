@@ -91,6 +91,22 @@ bagels records list --format yaml
 
 See [`SKILL.md`](SKILL.md) for the complete command reference.
 
+## 🤖 Install the agent skill
+
+Bagels includes a skill for coding agents that need to work with the finance CLI. Install it directly from this repository with:
+
+```bash
+npx skills@latest add thepbordin/bagels
+```
+
+To install it for every supported agent without prompts:
+
+```bash
+npx skills@latest add thepbordin/bagels --all
+```
+
+The skill is named `bagels-finance` and is defined in [`SKILL.md`](SKILL.md).
+
 ## ↔️ Migration
 
 Please read the [migration guide](MIGRATION.md) for migration from other services.
